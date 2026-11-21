@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#000000" />
+<meta name="color-scheme" content="dark" />
+<meta name="format-detection" content="telephone=no" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+<title>Kabin Harita</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:dark;
+  --vh:1vh;--vw:1vw;
+  --px:max(env(safe-area-inset-left),clamp(20px,calc(3.2*var(--vw)),44px));
+  --py:max(env(safe-area-inset-top),clamp(14px,calc(2.6*var(--vh)),28px));
+  --bg:#000000;
+  --card:#11161f;
+  --line:rgba(148,197,232,.14);
+  --ice:#7dd3fc;
+  --ice-bright:#d8f3ff;
+  --ice-sub:rgba(186,226,248,.62);
+  --ice-dim:rgba(148,197,232,.44);
+  --amber:#ffb000;
+}
+*{box-sizing:border-box;margin:0;padding:0;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+html,body{
+  width:100vw;height:100vh;height:100dvh;overflow:hidden;background:#000;color:var(--ice-bright);
+  touch-action:manipulation;overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%;
+  font-family:'Montserrat',-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;
+  font-feature-settings:'tnum' 1;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+
+.screen{position:relative;width:100%;height:100%;overflow:hidden;background:#000}
+
+/* TAM EKRAN HARİTA KATMANI */
+.map-stage{position:absolute;inset:0;width:100%;height:100%;z-index:1;cursor:pointer}
+.road-cv{position:absolute;inset:0;width:100%;height:100%;display:block}
+
+/* SOL ÜST: DÖNÜŞ OKU & AKILLI EĞİM GÖSTERGESİ */
+.top-left-hud{
+  position:absolute;left:var(--px);top:var(--py);z-index:6;
+  display:flex;flex-direction:column;align-items:flex-start;gap:clamp(6px,calc(1.2*var(--vh)),12px);
+  pointer-events:none
+}
+.nav-hud{
+  display:none;align-items:center;gap:clamp(10px,calc(1.5*var(--vw)),16px);
+  padding:6px 14px 6px 6px;border-radius:12px;
+  background:rgba(4,9,18,.52);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  pointer-events:auto;cursor:pointer;transition:opacity .25s,transform .15s
+}
+.nav-hud:active{transform:scale(.95)}
+.nav-hud.on{display:inline-flex}
+.nav-ico{
+  width:clamp(26px,calc(5.2*var(--vh)),38px);height:clamp(26px,calc(5.2*var(--vh)),38px);
+  color:var(--ice-bright);display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  filter:drop-shadow(0 0 10px rgba(125,211,252,.55))
+}
+.nav-ico svg{width:100%;height:100%}
+.nav-dist{
+  font-size:clamp(16px,calc(3.1*var(--vh)),24px);font-weight:600;letter-spacing:.08em;
+  color:var(--ice-bright);font-variant-numeric:tabular-nums;white-space:nowrap;
+  text-shadow:0 0 14px rgba(125,211,252,.35)
+}
+
+.grade-pill{
+  display:none;align-items:center;gap:5px;
+  padding:4px 10px;border-radius:8px;
+  background:rgba(4,9,18,.52);
+  font-size:clamp(10px,calc(1.7*var(--vh)),13px);font-weight:600;letter-spacing:.14em;
+  color:var(--ice);font-variant-numeric:tabular-nums
+}
+.grade-pill.on{display:inline-flex}
+
+/* ÜST ORTA: YAKLAŞAN HAVA / YOL UYARISI */
+.ahead-chip{
+  position:absolute;left:50%;top:var(--py);transform:translateX(-50%) translateY(-6px);z-index:6;
+  display:flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;
+  background:rgba(5,10,18,.68);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border:1px solid rgba(255,176,0,.48);color:#ffd275;
+  font-size:clamp(9px,calc(1.5*var(--vh)),11.5px);font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .5s,transform .5s
+}
+.ahead-chip.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* SAĞ ÜST: GİZLİ YÖN MODU DOKUNMA BÖLGESİ (Sürüş Yönü / Kuzey Yukarı) */
+.orient-zone{
+  position:absolute;right:0;top:0;width:clamp(96px,calc(16*var(--vw)),170px);height:clamp(74px,calc(16*var(--vh)),120px);
+  z-index:6;display:flex;align-items:flex-start;justify-content:flex-end;
+  padding:var(--py) var(--px) 0 0;cursor:pointer
+}
+.orient-badge{
+  font-size:clamp(8px,calc(1.25*var(--vh)),10px);font-weight:600;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ice-dim);opacity:.55;transition:opacity .25s,color .25s
+}
+.orient-zone:active .orient-badge{opacity:1;color:var(--ice-bright)}
+
+/* ALT ORTA: KABİN PANELİ STİLİ ŞEHİR İMZASI + KOORDİNAT + ROTA ÖZETİ */
+.sig-wrap{
+  position:absolute;left:50%;bottom:max(env(safe-area-inset-bottom),clamp(14px,calc(2.6*var(--vh)),26px));
+  transform:translateX(-50%);z-index:6;
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  padding:8px 22px;cursor:pointer;max-width:88vw
+}
+.sig-city{
+  font-size:clamp(16px,calc(3.1*var(--vh)),25px);font-weight:500;letter-spacing:.30em;
+  text-transform:uppercase;color:var(--ice-bright);
+  text-shadow:0 0 18px rgba(125,211,252,.28);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:82vw;
+  transition:color .2s
+}
+.sig-wrap:active .sig-city{color:#ffffff}
+.sig-sub{
+  margin-top:clamp(3px,calc(.6*var(--vh)),6px);
+  font-size:clamp(8.5px,calc(1.4*var(--vh)),11px);font-weight:500;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--ice-sub);white-space:nowrap
+}
+.sig-coords{
+  margin-top:clamp(3px,calc(.55*var(--vh)),5px);
+  font-size:clamp(8px,calc(1.3*var(--vh)),10.5px);font-weight:500;letter-spacing:.16em;
+  color:var(--ice-dim);font-variant-numeric:tabular-nums;white-space:nowrap
+}
+.sig-route{
+  display:none;margin-top:clamp(5px,calc(.9*var(--vh)),8px);
+  font-size:clamp(9.5px,calc(1.55*var(--vh)),12px);font-weight:600;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--ice);font-variant-numeric:tabular-nums;white-space:nowrap;
+  text-shadow:0 0 12px rgba(125,211,252,.35)
+}
+.sig-route.on{display:block}
+
+/* EN ALT KENAR: 2PX ROTA İLERLEME ÇİZGİSİ */
+.route-prog{
+  position:absolute;left:0;right:0;bottom:0;height:2px;z-index:8;
+  background:rgba(125,211,252,.08);opacity:0;pointer-events:none;transition:opacity .35s
+}
+.route-prog.on{opacity:1}
+.route-prog i{
+  display:block;height:100%;width:0%;
+  background:linear-gradient(90deg,rgba(56,189,248,.45),#bae6fd);
+  box-shadow:0 0 10px rgba(125,211,252,.65);
+  transition:width .4s ease-out
+}
+
+/* BİLDİRİM TOAST */
+.toast{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:20;
+  background:rgba(6,13,24,.72);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:1px solid rgba(125,211,252,.22);color:var(--ice-bright);
+  padding:8px 18px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.18em;
+  text-transform:uppercase;opacity:0;pointer-events:none;transition:opacity .28s
+}
+.toast.on{opacity:1}
+
+/* ROTA & ÇEVRİMDIŞI HARİTA MODALI */
+.modal{position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:16px}
+.modal.open{display:flex}
+.panel{width:100%;max-width:410px;max-height:92%;overflow-y:auto;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.search{width:100%;padding:11px 13px;border-radius:11px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--ice-bright);font-size:13.5px;outline:none}
+.search:focus{border-color:rgba(125,211,252,.55)}
+.res{display:flex;flex-direction:column;gap:6px;max-height:190px;overflow-y:auto}
+.opt{padding:9px 12px;border-radius:10px;background:rgba(255,255,255,.04);font-size:13px;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.opt:active{background:rgba(125,211,252,.18)}
+.opt-top{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:600;color:var(--ice-bright)}
+.opt-dist{font-size:11px;font-weight:600;color:var(--ice);flex-shrink:0}
+.opt-sub{font-size:11px;color:var(--ice-sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn-ice{border:1px solid rgba(125,211,252,.45);color:var(--ice);padding:5px 12px;border-radius:9px;font-size:11.5px;font-weight:600;letter-spacing:.06em}
+.btn-dim{border:1px solid var(--line);color:var(--ice-sub);padding:5px 12px;border-radius:9px;font-size:11.5px}
+</style>
+</head>
+<body>
+
+<div class="screen" id="screen">
+  <div class="map-stage" id="mapStage">
+    <canvas class="road-cv" id="roadCanvas"></canvas>
+  </div>
+
+  <!-- SOL ÜST: DÖNÜŞ OKU + METRE & AKILLI EĞİM -->
+  <div class="top-left-hud">
+    <div class="nav-hud" id="navHud" onclick="cancelNav(true)">
+      <div class="nav-ico" id="navIcon"></div>
+      <span class="nav-dist" id="navTurnDist">--</span>
+    </div>
+    <div class="grade-pill" id="gradePill">
+      <span id="gradeText">%0</span>
+    </div>
+  </div>
+
+  <!-- ÜST ORTA: YAKLAŞAN HAVA / YOL UYARISI -->
+  <div class="ahead-chip" id="aheadChip">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffb000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 22 20H2z"/><path d="M12 10v4.5M12 17.5v.1"/></svg>
+    <span id="aheadText"></span>
+  </div>
+
+  <!-- SAĞ ÜST: YÖN MODU (SÜRÜŞ YÖNÜ / KUZEY YUKARI) -->
+  <div class="orient-zone" onclick="toggleNorthUp()">
+    <span class="orient-badge" id="orientBadge">SÜRÜŞ</span>
+  </div>
+
+  <!-- ALT ORTA: ŞEHİR İMZASI + KOORDİNAT + ROTA ÖZETİ -->
+  <div class="sig-wrap" id="sigBox" onclick="openNav()">
+    <div class="sig-city" id="sigCity">KONUM ALINIYOR</div>
+    <div class="sig-sub" id="sigSub">TÜRKİYE</div>
+    <div class="sig-coords" id="sigCoords">--°--'--" N · --°--'--" E</div>
+    <div class="sig-route" id="sigRoute">--</div>
+  </div>
+
+  <!-- EN ALT KENAR: 2PX İLERLEME ÇİZGİSİ -->
+  <div class="route-prog" id="routeProg"><i id="routeProgFill"></i></div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<!-- ROTA ARAMA & ÇEVRİMDIŞI HARİTA MODALI -->
+<div class="modal" id="navModal" onclick="closeNav()">
+  <div class="panel" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <strong style="font-size:13.5px;font-weight:600;letter-spacing:.06em;color:var(--ice-bright)">HEDEF & HARİTA</strong>
+      <div style="display:flex;gap:6px">
+        <button id="navCancelModalBtn" class="btn-ice" onclick="cancelNav(true);closeNav()" style="display:none">Rotayı iptal et</button>
+        <button class="btn-dim" onclick="toggleRotMode()">Ekran yönü</button>
+      </div>
+    </div>
+    <input id="navInput" class="search" placeholder="Adres, cadde, ilçe veya şehir yazın…" />
+    <div id="navHint" style="font-size:11px;color:var(--ice-sub)">Bulunduğun konumdan araç rotası çizilir</div>
+    <div class="res" id="navRes"></div>
+
+    <div style="border-top:1px solid var(--line);padding-top:11px;display:flex;flex-direction:column;gap:7px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <strong style="font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--ice-bright)">ÇEVRİMDIŞI HARİTA</strong>
+        <span id="dlInfo" style="font-size:10.5px;color:var(--ice-dim)"></span>
+      </div>
+      <div id="dlText" style="font-size:11.5px;color:var(--ice-sub)">İzmir · Aydın · Muğla ana yollar, demiryolu, nehir ve kıyı</div>
+      <div style="height:2px;background:rgba(125,211,252,.12);border-radius:2px;overflow:hidden"><i id="dlBar" style="display:block;height:100%;width:0;background:var(--ice)"></i></div>
+      <div style="display:flex;gap:8px;margin-top:2px">
+        <button id="dlBtn" class="btn-ice" onclick="toggleDownload()">İndir</button>
+        <button class="btn-dim" onclick="clearOffline()">Sil</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, '0');
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const M_LAT = 110540;
+
+function toast(t){
+  const el = $('toast');
+  el.textContent = t;
+  el.classList.add('on');
+  clearTimeout(toast.t);
+  toast.t = setTimeout(() => el.classList.remove('on'), 1600);
+}
+
+/* ---------- ZOOM & HIZA DUYARLI OTOMATİK YAKINLAŞTIRMA ---------- */
+const ZOOM_STEPS = [
+  { meters: 150,  label: '150 M' },
+  { meters: 300,  label: '300 M' },
+  { meters: 500,  label: '500 M' },
+  { meters: 1000, label: '1.0 KM' },
+  { meters: 1500, label: '1.5 KM' },
+  { meters: 3000, label: '3.0 KM' }
+];
+let autoZoom = true;
+let manualZoomIdx = 1;
+let targetZoomMeters = 350;
+let renderZoomMeters = 350;
+let northUp = false;
+
+function computeAutoZoomMeters(speedMs, distToNextTurn){
+  const kmh = (speedMs || 0) * 3.6;
+  if (distToNextTurn != null && distToNextTurn < 260) return 260;
+  if (kmh < 35) return 320;
+  if (kmh < 65) return 550;
+  if (kmh < 88) return 1400;
+  return 2600;
+}
+
+function toggleNorthUp(){
+  northUp = !northUp;
+  $('orientBadge').textContent = northUp ? 'KUZEY' : 'SÜRÜŞ';
+  toast(northUp ? 'Kuzey yukarıda' : 'Sürüş yönü yukarıda');
+  kickRoadAnim();
+}
+
+/* ---------- AKILLI RAMPA / EĞİM HESAPLAYICI ---------- */
+let slopeRefLat = null, slopeRefLon = null, slopeRefAlt = null;
+let smoothGrade = 0;
+
+function updateSlope(lat, lon, alt){
+  if (alt == null || !isFinite(alt)) return;
+  if (slopeRefLat === null){
+    slopeRefLat = lat; slopeRefLon = lon; slopeRefAlt = alt;
+    return;
+  }
+  const dMeters = distKm(slopeRefLat, slopeRefLon, lat, lon) * 1000;
+  if (dMeters >= 38){
+    const dAlt = alt - slopeRefAlt;
+    const rawPct = Math.max(-25, Math.min(25, (dAlt / dMeters) * 100));
+    smoothGrade = smoothGrade * 0.55 + rawPct * 0.45;
+    slopeRefLat = lat; slopeRefLon = lon; slopeRefAlt = alt;
+    renderSlopeBadge();
+  }
+}
+
+function renderSlopeBadge(){
+  const absG = Math.abs(smoothGrade);
+  const pill = $('gradePill');
+  if (absG >= 3){
+    const dir = smoothGrade > 0 ? '↑' : '↓';
+    $('gradeText').textContent = `%${Math.round(absG)} ${dir}`;
+    pill.classList.add('on');
+  } else {
+    pill.classList.remove('on');
+  }
+}
+
+/* ---------- HARİTA MOTORU (GECE MAVİSİ & OLED SİYAH) ---------- */
+const roadCv = $('roadCanvas'), rctx = roadCv.getContext('2d');
+const DPR = Math.min(3, window.devicePixelRatio || 1);
+const OVERPASS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://z.overpass-api.de/api/interpreter',
+  'https://lz4.overpass-api.de/api/interpreter',
+  'https://overpass.private.coffee/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass.openstreetmap.fr/api/interpreter'
+];
+const HW_ALL  = 'motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|living_street';
+const HW_MAIN = 'motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link';
+
+let roadWays = [], roadAnchorSet = false, ancLat = 0, ancLon = 0, ancMLon = 111320;
+let roadFetchLat = null, roadFetchLon = null, roadFetchAt = 0, roadFetchRadiusKm = 2.6;
+let roadLastTryAt = 0, roadLoading = false, roadLoadStart = 0, roadRetryTimer = null;
+let liveRaw = [], liveIndex = null;
+const loadedCells = new Map(), loadedLive = new Map();
+let targetLat = null, targetLon = null, renderLat = null, renderLon = null;
+let fixLat = null, fixLon = null, fixSpeed = 0, fixHead = 0, fixTime = 0;
+let targetHeading = 0, renderHeading = 0, roadAnimRaf = null, lastStepTs = 0;
+
+function roadSize(){
+  roadCv.width = Math.max(1, Math.round(roadCv.clientWidth * DPR));
+  roadCv.height = Math.max(1, Math.round(roadCv.clientHeight * DPR));
+  fadeCache.w = 0;
+  drawRoadMap();
+}
+
+function kickRoadAnim(){ if (!roadAnimRaf) roadAnimRaf = requestAnimationFrame(stepRoadAnim); }
+function stepRoadAnim(ts){
+  roadAnimRaf = null;
+  if (targetLat === null || targetLon === null) return;
+  let tl = targetLat, tn = targetLon;
+  const age = (Date.now() - fixTime) / 1000;
+  const driving = fixLat !== null && fixSpeed > 0.8 && age < 6;
+  if (driving){
+    const a = Math.min(age, 3), hr = fixHead * Math.PI / 180;
+    tl = fixLat + fixSpeed * a * Math.cos(hr) / M_LAT;
+    tn = fixLon + fixSpeed * a * Math.sin(hr) / (111320 * Math.cos(tl * Math.PI / 180));
+  }
+  const desiredHead = northUp ? 0 : targetHeading;
+  if (renderLat === null){
+    renderLat = tl; renderLon = tn; renderHeading = desiredHead;
+    renderZoomMeters = targetZoomMeters;
+    lastStepTs = ts || 0;
+    drawRoadMap();
+    if (driving) kickRoadAnim();
+    return;
+  }
+  const dt = lastStepTs ? Math.min(0.1, Math.max(0.001, (ts - lastStepTs) / 1000)) : 0.016;
+  lastStepTs = ts || 0;
+  const k = 1 - Math.exp(-dt * 9);
+  const kh = 1 - Math.exp(-dt * 7);
+  const kz = 1 - Math.exp(-dt * 3.2);
+
+  const dLat = tl - renderLat, dLon = tn - renderLon;
+  const dHead = ((desiredHead - renderHeading + 540) % 360) - 180;
+  const dZoom = targetZoomMeters - renderZoomMeters;
+
+  const settled = Math.abs(dLat) < 1e-7 && Math.abs(dLon) < 1e-7 && Math.abs(dHead) < 0.25 && Math.abs(dZoom) < 0.5;
+  if (settled){
+    renderLat = tl; renderLon = tn; renderHeading = desiredHead; renderZoomMeters = targetZoomMeters;
+  } else {
+    renderLat += dLat * k;
+    renderLon += dLon * k;
+    renderHeading = (renderHeading + dHead * kh + 360) % 360;
+    renderZoomMeters += dZoom * kz;
+  }
+  drawRoadMap();
+  if (driving || !settled) roadAnimRaf = requestAnimationFrame(stepRoadAnim); else lastStepTs = 0;
+}
+
+$('mapStage').addEventListener('click', () => {
+  if (autoZoom){
+    autoZoom = false;
+    manualZoomIdx = 1;
+    targetZoomMeters = ZOOM_STEPS[manualZoomIdx].meters;
+    toast('Ölçek: ' + ZOOM_STEPS[manualZoomIdx].label);
+  } else if (manualZoomIdx < ZOOM_STEPS.length - 1){
+    manualZoomIdx++;
+    targetZoomMeters = ZOOM_STEPS[manualZoomIdx].meters;
+    toast('Ölçek: ' + ZOOM_STEPS[manualZoomIdx].label);
+  } else {
+    autoZoom = true;
+    targetZoomMeters = computeAutoZoomMeters(fixSpeed, lastDistToTurn);
+    toast('Oto zoom');
+  }
+  kickRoadAnim();
+});
+
+/* --- Telefon deposu (IndexedDB) --- */
+let idbP = null;
+function idb(){
+  if (idbP) return idbP;
+  idbP = new Promise((res, rej) => {
+    try{
+      const rq = indexedDB.open('kabin-harita', 1);
+      rq.onupgradeneeded = () => { const d = rq.result; ['cells', 'live', 'meta'].forEach(n => { if (!d.objectStoreNames.contains(n)) d.createObjectStore(n); }); };
+      rq.onsuccess = () => res(rq.result);
+      rq.onerror = () => rej(rq.error);
+    }catch(e){ rej(e); }
+  });
+  idbP.catch(() => { idbP = null; });
+  return idbP;
+}
+function idbOp(store, mode, fn){
+  return idb().then(db => new Promise((res, rej) => {
+    const tx = db.transaction(store, mode);
+    const rq = fn(tx.objectStore(store));
+    tx.oncomplete = () => res(rq && rq.result);
+    tx.onerror = () => rej(tx.error);
+    tx.onabort = () => rej(tx.error);
+  }));
+}
+const idbGet = (s, k) => idbOp(s, 'readonly', o => o.get(k));
+const idbPut = (s, k, v) => idbOp(s, 'readwrite', o => o.put(v, k));
+const idbDel = (s, k) => idbOp(s, 'readwrite', o => o.delete(k));
+const idbKeys = s => idbOp(s, 'readonly', o => o.getAllKeys());
+const idbClear = s => idbOp(s, 'readwrite', o => o.clear());
+
+function rawFromElements(els){
+  const out = [];
+  for (const el of els){
+    if (el.type !== 'way' || !Array.isArray(el.geometry) || el.geometry.length < 2) continue;
+    const tg = el.tags || {};
+    const k = tg.highway ? tg.highway : tg.railway ? 'rail' : tg.waterway ? 'river' : tg.natural === 'coastline' ? 'coast' : null;
+    if (!k) continue;
+    const pts = []; let a0 = 90, a1 = -90, o0 = 180, o1 = -180;
+    for (const g of el.geometry){
+      if (!g || g.lat == null) continue;
+      pts.push(+g.lat.toFixed(5), +g.lon.toFixed(5));
+      if (g.lat < a0) a0 = g.lat; if (g.lat > a1) a1 = g.lat;
+      if (g.lon < o0) o0 = g.lon; if (g.lon > o1) o1 = g.lon;
+    }
+    if (pts.length < 4) continue;
+    out.push({ id: el.id, k, ref: tg.ref || '', name: tg.name || '', pts, b: [a0, a1, o0, o1] });
+  }
+  return out;
+}
+const CLS = { motorway:0, motorway_link:0, trunk:0, trunk_link:0, primary:1, primary_link:1, secondary:2, secondary_link:2, tertiary:3, tertiary_link:3 };
+function toLocal(w, lat, lon, mLon){
+  const p = w.pts, m = [];
+  let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+  for (let i = 0; i < p.length; i += 2){
+    const x = (p[i+1] - lon) * mLon, y = (p[i] - lat) * M_LAT;
+    m.push([x, y]);
+    if (x < x0) x0 = x; if (x > x1) x1 = x;
+    if (y < y0) y0 = y; if (y > y1) y1 = y;
+  }
+  const k = w.k;
+  const cls = k === 'rail' ? 6 : k === 'river' ? 7 : k === 'coast' ? 8 : (k in CLS ? CLS[k] : 4);
+  return { id: w.id, hw: k, ref: w.ref, name: w.name, road: cls <= 4, cls, m, bx0: x0, bx1: x1, by0: y0, by1: y1 };
+}
+function rebuildLocal(lat, lon){
+  const cosL = Math.max(0.2, Math.cos(lat * Math.PI / 180)), mLon = 111320 * cosL;
+  const R = 0.055, RL = R / cosL;
+  const seen = new Set(), out = [];
+  const add = arr => {
+    for (const w of arr){
+      if (seen.has(w.id)) continue;
+      const b = w.b;
+      if (b[0] > lat + R || b[1] < lat - R || b[2] > lon + RL || b[3] < lon - RL) continue;
+      seen.add(w.id);
+      out.push(toLocal(w, lat, lon, mLon));
+    }
+  };
+  add(liveRaw);
+  for (const a of loadedLive.values()) add(a);
+  for (const a of loadedCells.values()) add(a);
+  ancLat = lat; ancLon = lon; ancMLon = mLon; roadAnchorSet = true;
+  roadWays = out;
+  projectNavRoute();
+  drawRoadMap();
+}
+
+const CELL = 0.25;
+let lastCacheLat = null, lastCacheLon = null, cacheBusy = false;
+async function loadCaches(lat, lon){
+  let changed = false;
+  const iy0 = Math.floor(lat / CELL), ix0 = Math.floor(lon / CELL);
+  const need = new Set();
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) need.add((iy0 + dy) + '_' + (ix0 + dx));
+  for (const k of [...loadedCells.keys()]) if (!need.has(k)){ loadedCells.delete(k); changed = true; }
+  for (const k of need){
+    if (loadedCells.has(k)) continue;
+    try{ const r = await idbGet('cells', k); if (r && r.ways){ loadedCells.set(k, r.ways); changed = true; } }catch{}
+  }
+  if (liveIndex === null){ try{ liveIndex = (await idbGet('meta', 'liveIndex')) || []; }catch{ liveIndex = []; } }
+  const keep = new Set();
+  for (const e of liveIndex){
+    const [a, b] = e.k.split('_').map(Number);
+    if (Math.abs(a - lat) < 0.055 && Math.abs(b - lon) < 0.07){
+      keep.add(e.k);
+      if (!loadedLive.has(e.k)){
+        try{ const r = await idbGet('live', e.k); if (r && r.ways){ loadedLive.set(e.k, r.ways); changed = true; } }catch{}
+      }
+    }
+  }
+  for (const k of [...loadedLive.keys()]) if (!keep.has(k)){ loadedLive.delete(k); changed = true; }
+  return changed;
+}
+function ensureLocal(lat, lon){
+  if (!roadAnchorSet || distKm(ancLat, ancLon, lat, lon) > 1.8) rebuildLocal(lat, lon);
+  if (!cacheBusy && (lastCacheLat === null || distKm(lastCacheLat, lastCacheLon, lat, lon) > 0.7)){
+    cacheBusy = true; lastCacheLat = lat; lastCacheLon = lon;
+    loadCaches(lat, lon)
+      .then(ch => { if (ch) rebuildLocal(targetLat !== null ? targetLat : lat, targetLon !== null ? targetLon : lon); })
+      .catch(() => {})
+      .then(() => { cacheBusy = false; });
+  }
+}
+async function saveLive(lat, lon, raw){
+  try{
+    const k = lat.toFixed(2) + '_' + lon.toFixed(2);
+    await idbPut('live', k, { t: Date.now(), ways: raw });
+    if (liveIndex === null) liveIndex = (await idbGet('meta', 'liveIndex')) || [];
+    liveIndex = liveIndex.filter(e => e.k !== k);
+    liveIndex.push({ k, t: Date.now() });
+    while (liveIndex.length > 140){ const old = liveIndex.shift(); await idbDel('live', old.k); loadedLive.delete(old.k); }
+    await idbPut('meta', 'liveIndex', liveIndex);
+  }catch{}
+}
+
+function firstOk(list){
+  return new Promise((resolve, reject) => {
+    let left = list.length; const errs = [];
+    list.forEach(p => p.then(resolve, e => { errs.push(e && e.message ? e.message : String(e)); if (--left === 0) reject(new Error(errs.join(' | '))); }));
+  });
+}
+function overpassQuery(lat, lon, kinds, d, extras){
+  const cosLat = Math.max(0.2, Math.cos(lat * Math.PI / 180));
+  const dLon = d / cosLat;
+  const box = `${(lat-d).toFixed(5)},${(lon-dLon).toFixed(5)},${(lat+d).toFixed(5)},${(lon+dLon).toFixed(5)}`;
+  let body = `way["highway"~"^(${kinds})$"](${box});`;
+  if (extras) body += `way["railway"="rail"](${box});way["waterway"="river"](${box});way["natural"="coastline"](${box});`;
+  return `[out:json][timeout:22];(${body});out body geom;`;
+}
+async function overpassGet(q){
+  const ctrls = OVERPASS.map(() => new AbortController());
+  const killer = setTimeout(() => ctrls.forEach(c => c.abort()), 19000);
+  try{
+    return await firstOk(OVERPASS.map((ep, i) => {
+      return fetch(`${ep}?data=${encodeURIComponent(q)}`, { signal: ctrls[i].signal })
+        .then(r => { if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
+        .then(d => {
+          if (!d || !Array.isArray(d.elements)) throw new Error('bozuk cevap');
+          if (!d.elements.length && d.remark) throw new Error('sunucu zaman aşımı');
+          return d;
+        });
+    }));
+  } finally {
+    clearTimeout(killer);
+    ctrls.forEach(c => c.abort());
+  }
+}
+let dlRot = 0;
+async function overpassSeq(q, ms){
+  const errs = [];
+  for (let i = 0; i < OVERPASS.length; i++){
+    const ep = OVERPASS[(dlRot + i) % OVERPASS.length];
+    const ctrl = new AbortController(); const tm = setTimeout(() => ctrl.abort(), ms);
+    try{
+      const r = await fetch(`${ep}?data=${encodeURIComponent(q)}`, { signal: ctrl.signal });
+      if (!r.ok) throw new Error('http ' + r.status);
+      const d = await r.json();
+      if (!d || !Array.isArray(d.elements)) throw new Error('bozuk cevap');
+      if (!d.elements.length && d.remark) throw new Error('zaman aşımı');
+      clearTimeout(tm); dlRot = (dlRot + i) % OVERPASS.length;
+      return d;
+    }catch(e){ clearTimeout(tm); errs.push(e && e.message); }
+  }
+  throw new Error(errs.join(' | '));
+}
+
+async function fetchRoadNetwork(lat, lon, force=false){
+  if (lat == null || lon == null) return;
+  ensureLocal(lat, lon);
+  const now = Date.now();
+  const moved = roadFetchLat !== null ? distKm(roadFetchLat, roadFetchLon, lat, lon) : 99;
+  if (!force && liveRaw.length && moved < roadFetchRadiusKm * 0.45 && now - roadFetchAt < 300000) return;
+  if (roadLoading && now - roadLoadStart < 60000) return;
+  if (!force && now - roadLastTryAt < 8000) return;
+
+  clearTimeout(roadRetryTimer);
+  roadLoading = true; roadLoadStart = now; roadLastTryAt = now;
+
+  let data = null, radius = 2.6;
+  const tiers = [[HW_ALL, 0.024, 2.6, true], [HW_MAIN, 0.032, 3.5, true], [HW_MAIN, 0.014, 1.5, false]];
+  for (const [kinds, d, r, ex] of tiers){
+    try{ data = await overpassGet(overpassQuery(lat, lon, kinds, d, ex)); radius = r; break; }
+    catch{}
+  }
+
+  if (!data){
+    roadRetryTimer = setTimeout(() => {
+      if (targetLat !== null && targetLon !== null) fetchRoadNetwork(targetLat, targetLon, true);
+    }, 15000);
+    roadLoading = false;
+    return;
+  }
+
+  try{
+    const raw = rawFromElements(data.elements);
+    liveRaw = raw;
+    roadFetchLat = lat; roadFetchLon = lon; roadFetchAt = Date.now(); roadFetchRadiusKm = radius;
+    rebuildLocal(targetLat !== null ? targetLat : lat, targetLon !== null ? targetLon : lon);
+    saveLive(lat, lon, raw);
+  }finally{
+    roadLoading = false;
+  }
+}
+
+/* --- Çevrimdışı indirme: İzmir · Aydın · Muğla --- */
+const REGION_BOX = [[37.8, 39.4, 26.1, 28.4], [37.5, 38.2, 27.2, 28.9], [36.5, 37.6, 27.3, 29.5]];
+function regionCells(){
+  const seen = new Set(), list = [];
+  for (const [a, b, c, d] of REGION_BOX){
+    for (let iy = Math.floor(a / CELL); iy <= Math.floor(b / CELL); iy++)
+      for (let ix = Math.floor(c / CELL); ix <= Math.floor(d / CELL); ix++){
+        const k = iy + '_' + ix;
+        if (!seen.has(k)){ seen.add(k); list.push([iy, ix]); }
+      }
+  }
+  return list;
+}
+function cellQuery(iy, ix){
+  const s = (iy * CELL).toFixed(4), w = (ix * CELL).toFixed(4), n = ((iy + 1) * CELL).toFixed(4), e = ((ix + 1) * CELL).toFixed(4);
+  const box = `${s},${w},${n},${e}`;
+  return `[out:json][timeout:80];(way["highway"~"^(${HW_MAIN})$"](${box});way["railway"="rail"](${box});way["waterway"="river"](${box});way["natural"="coastline"](${box}););out body geom;`;
+}
+let dlRunning = false, dlCancel = false;
+function setDl(text, frac){
+  $('dlText').textContent = text;
+  if (frac != null) $('dlBar').style.width = Math.round(frac * 100) + '%';
+}
+async function storageInfo(){
+  try{
+    const n = (await idbKeys('cells')).length, tot = regionCells().length;
+    let mb = '';
+    if (navigator.storage && navigator.storage.estimate){ const e = await navigator.storage.estimate(); mb = ' · ' + Math.round((e.usage || 0) / 1048576) + ' MB'; }
+    $('dlInfo').textContent = `${n}/${tot} bölge${mb}`;
+    if (!dlRunning) $('dlBar').style.width = Math.round(n / tot * 100) + '%';
+  }catch{ $('dlInfo').textContent = 'Depo kapalı'; }
+}
+async function toggleDownload(){
+  if (dlRunning){ dlCancel = true; setDl('Durduruluyor…'); return; }
+  let have;
+  try{ have = new Set(await idbKeys('cells')); }
+  catch{ setDl('Telefon deposu kullanılamıyor'); return; }
+  dlRunning = true; dlCancel = false; $('dlBtn').textContent = 'Durdur';
+  try{ if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch{}
+  const cells = regionCells();
+  let done = cells.filter(([y, x]) => have.has(y + '_' + x)).length, failed = 0;
+  setDl(`${done}/${cells.length} hazır`, done / cells.length);
+  for (const [iy, ix] of cells){
+    if (dlCancel) break;
+    const key = iy + '_' + ix;
+    if (have.has(key)) continue;
+    let ok = false;
+    for (let tries = 0; tries < 3 && !ok && !dlCancel; tries++){
+      try{
+        setDl(`İndiriliyor ${done + 1}/${cells.length}` + (tries ? ` (deneme ${tries + 1})` : ''), done / cells.length);
+        const data = await overpassSeq(cellQuery(iy, ix), 90000);
+        await idbPut('cells', key, { t: Date.now(), ways: rawFromElements(data.elements) });
+        ok = true; done++;
+      }catch{ await sleep(2500); }
+    }
+    if (!ok && !dlCancel) failed++;
+    await sleep(400);
+  }
+  dlRunning = false; $('dlBtn').textContent = 'İndir';
+  if (dlCancel) setDl(`Durduruldu: ${done}/${cells.length} hazır`, done / cells.length);
+  else if (failed) setDl(`${done}/${cells.length} hazır, ${failed} bölge inmedi`, done / cells.length);
+  else setDl(`İndirme tamam: ${done}/${cells.length} bölge`, 1);
+  storageInfo();
+  lastCacheLat = null;
+  if (targetLat !== null) ensureLocal(targetLat, targetLon);
+}
+async function clearOffline(){
+  if (dlRunning){ setDl('Önce indirmeyi durdur'); return; }
+  try{ await idbClear('cells'); await idbClear('live'); await idbClear('meta'); }catch{}
+  loadedCells.clear(); loadedLive.clear(); liveIndex = []; lastCacheLat = null;
+  setDl('Çevrimdışı harita silindi', 0); storageInfo();
+  if (targetLat !== null) rebuildLocal(targetLat, targetLon);
+}
+
+/* ---------- ROTA & NAVİGASYON (OSRM + PHOTON) ---------- */
+let navRoute = null, lastDistToTurn = null;
+let lastChimeStep = -1, lastRerouteAt = 0, navRerouting = false, navAudioCtx = null;
+let navSearchTimer = null, navRecent = [];
+try{ navRecent = JSON.parse(localStorage.getItem('nav_recent') || '[]') || []; }catch{ navRecent = []; }
+
+const TURN_SVGS = {
+  'straight':     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V5"/><polyline points="7 10 12 5 17 10"/></svg>',
+  'right':        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20v-7a4 4 0 0 1 4-4h8"/><polyline points="15 5 19 9 15 13"/></svg>',
+  'slight-right': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20v-5.5a4 4 0 0 1 1.2-2.8L17 5"/><polyline points="11 5 17 5 17 11"/></svg>',
+  'sharp-right':  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20V8l10 10"/><polyline points="11 18 17 18 17 12"/></svg>',
+  'left':         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20v-7a4 4 0 0 0-4-4H5"/><polyline points="9 5 5 9 9 13"/></svg>',
+  'slight-left':  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 20v-5.5a4 4 0 0 0-1.2-2.8L7 5"/><polyline points="13 5 7 5 7 11"/></svg>',
+  'sharp-left':   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20V8L7 18"/><polyline points="13 18 7 18 7 12"/></svg>',
+  'uturn':        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20V9a4 4 0 0 0-8 0v8"/><polyline points="4 13 8 17 12 13"/></svg>',
+  'roundabout':   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="11" r="4"/><path d="M12 20v-5"/><path d="M15 8l4-4"/><polyline points="15 4 19 4 19 8"/></svg>',
+  'arrive':       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.4-6-10a6 6 0 1 1 12 0c0 4.6-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg>'
+};
+
+function parseManeuverIcon(step){
+  const m = step.maneuver || {};
+  const t = m.type || '', mod = m.modifier || '';
+  if (t === 'arrive') return 'arrive';
+  if (t === 'roundabout' || t === 'rotary' || t === 'roundabout turn') return 'roundabout';
+  if (t === 'exit roundabout' || t === 'exit rotary') return 'slight-right';
+  if (mod === 'uturn' || t === 'uturn') return 'uturn';
+  if (mod === 'sharp right') return 'sharp-right';
+  if (mod === 'right') return 'right';
+  if (mod === 'slight right') return 'slight-right';
+  if (mod === 'sharp left') return 'sharp-left';
+  if (mod === 'left') return 'left';
+  if (mod === 'slight left') return 'slight-left';
+  if (t === 'merge') return 'slight-left';
+  if (t === 'on ramp') return 'slight-right';
+  return 'straight';
+}
+
+function fmtNavDist(m){
+  if (m >= 10000) return `${Math.round(m / 1000)} KM`;
+  if (m >= 1000) return `${(m / 1000).toFixed(1)} KM`;
+  if (m >= 100) return `${Math.round(m / 10) * 10} M`;
+  return `${Math.max(5, Math.round(m / 5) * 5)} M`;
+}
+
+function fmtRouteSummary(remM, remSec){
+  const distStr = remM < 1000 ? `${Math.max(0, Math.round(remM))} M` : `${(remM / 1000 >= 100 ? Math.round(remM / 1000) : (remM / 1000).toFixed(1))} KM`;
+  const mins = Math.max(1, Math.round((remSec || 0) / 60));
+  const h = Math.floor(mins / 60), m = mins % 60;
+  const durStr = h > 0 ? (m > 0 ? `${h} SA ${m} DK` : `${h} SA`) : `${m} DK`;
+  const arr = new Date(Date.now() + mins * 60000);
+  const arrStr = `${pad(arr.getHours())}:${pad(arr.getMinutes())}`;
+  return `${distStr} · ${durStr} · ${arrStr}`;
+}
+
+function snapToPolyline(px, py, pts, cum){
+  let bestDSq = Infinity, bestSeg = 0, bestT = 0, bestX = pts[0][0], bestY = pts[0][1];
+  for (let i = 0; i < pts.length - 1; i++){
+    const ax = pts[i][0], ay = pts[i][1], bx = pts[i+1][0], by = pts[i+1][1];
+    const dx = bx - ax, dy = by - ay, l2 = dx*dx + dy*dy;
+    let t = l2 > 0 ? ((px - ax)*dx + (py - ay)*dy) / l2 : 0;
+    t = Math.max(0, Math.min(1, t));
+    const cx = ax + t*dx, cy = ay + t*dy;
+    const dSq = (px - cx)*(px - cx) + (py - cy)*(py - cy);
+    if (dSq < bestDSq){ bestDSq = dSq; bestSeg = i; bestT = t; bestX = cx; bestY = cy; }
+  }
+  const segLen = cum[bestSeg + 1] - cum[bestSeg];
+  return {
+    pt: [bestX, bestY],
+    seg: bestSeg,
+    t: bestT,
+    along: cum[bestSeg] + bestT * segLen,
+    offDist: Math.sqrt(bestDSq)
+  };
+}
+
+function projectNavRoute(){
+  if (!navRoute || !roadAnchorSet) return;
+  const pts = navRoute.coords.map(([la, lo]) => [(lo - ancLon) * ancMLon, (la - ancLat) * M_LAT]);
+  const cum = [0];
+  for (let i = 1; i < pts.length; i++){
+    cum.push(cum[i-1] + Math.hypot(pts[i][0] - pts[i-1][0], pts[i][1] - pts[i-1][1]));
+  }
+  navRoute.localPts = pts;
+  navRoute.cum = cum;
+  navRoute.totalLen = Math.max(1, cum[cum.length - 1]);
+
+  navRoute.steps.forEach((st, idx) => {
+    if (idx === navRoute.steps.length - 1){ st.along = navRoute.totalLen; st.xy = pts[pts.length - 1]; return; }
+    const sx = (st.lon - ancLon) * ancMLon, sy = (st.lat - ancLat) * M_LAT;
+    const sn = snapToPolyline(sx, sy, pts, cum);
+    st.along = sn.along;
+    st.xy = sn.pt;
+  });
+}
+
+function playTurnChime(){
+  try{
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    if (!navAudioCtx) navAudioCtx = new AC();
+    if (navAudioCtx.state === 'suspended') navAudioCtx.resume();
+    const now = navAudioCtx.currentTime;
+    [587.33, 880].forEach((freq, i) => {
+      const osc = navAudioCtx.createOscillator(), g = navAudioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + i * 0.13);
+      g.gain.setValueAtTime(0.001, now + i * 0.13);
+      g.gain.exponentialRampToValueAtTime(0.13, now + i * 0.13 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.13 + 0.22);
+      osc.connect(g); g.connect(navAudioCtx.destination);
+      osc.start(now + i * 0.13); osc.stop(now + i * 0.13 + 0.24);
+    });
+  }catch{}
+}
+
+function syncNavUiState(){
+  const active = !!navRoute;
+  $('navHud').classList.toggle('on', active);
+  $('sigRoute').classList.toggle('on', active);
+  $('routeProg').classList.toggle('on', active);
+  $('navCancelModalBtn').style.display = active ? 'inline-block' : 'none';
+  if (!active){
+    lastDistToTurn = null;
+    $('routeProgFill').style.width = '0%';
+  }
+}
+
+function cancelNav(announce=false){
+  navRoute = null;
+  lastChimeStep = -1;
+  lastDistToTurn = null;
+  syncNavUiState();
+  if (autoZoom) targetZoomMeters = computeAutoZoomMeters(fixSpeed, null);
+  kickRoadAnim();
+  if (announce) toast('Rota iptal edildi');
+}
+
+function saveRecentDest(item){
+  navRecent = navRecent.filter(x => x.name !== item.name);
+  navRecent.unshift(item);
+  if (navRecent.length > 4) navRecent.length = 4;
+  try{ localStorage.setItem('nav_recent', JSON.stringify(navRecent)); }catch{}
+}
+
+async function startRouteTo(destName, destLat, destLon, isReroute=false){
+  if (targetLat === null || targetLon === null){
+    toast('Önce GPS konumu bekleniyor');
+    return;
+  }
+  if (!isReroute){
+    saveRecentDest({ name: destName, lat: destLat, lon: destLon });
+    $('navHud').classList.add('on');
+    $('sigRoute').classList.add('on');
+    $('routeProg').classList.add('on');
+    $('navIcon').innerHTML = TURN_SVGS.straight;
+    $('navTurnDist').textContent = '…';
+    $('sigRoute').textContent = 'ROTA HESAPLANIYOR…';
+  }
+
+  const coordsParam = `${targetLon.toFixed(6)},${targetLat.toFixed(6)};${destLon.toFixed(6)},${destLat.toFixed(6)}`;
+  const endpoints = [
+    `https://routing.openstreetmap.de/routed-car/route/v1/driving/${coordsParam}?overview=full&geometries=geojson&steps=true`,
+    `https://router.project-osrm.org/route/v1/driving/${coordsParam}?overview=full&geometries=geojson&steps=true`
+  ];
+
+  let routeData = null;
+  for (const url of endpoints){
+    try{
+      const ctrl = new AbortController();
+      const tm = setTimeout(() => ctrl.abort(), 10000);
+      const res = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(tm);
+      if (!res.ok) continue;
+      const d = await res.json();
+      if (d && d.code === 'Ok' && d.routes && d.routes[0]){ routeData = d.routes[0]; break; }
+    }catch{}
+  }
+
+  if (!routeData){
+    if (!isReroute){ cancelNav(false); toast('Rota hesaplanamadı'); }
+    return;
+  }
+
+  const rawCoords = routeData.geometry.coordinates.map(([lo, la]) => [la, lo]);
+  const rawSteps = [];
+  (routeData.legs || []).forEach(leg => {
+    (leg.steps || []).forEach(st => {
+      const ico = parseManeuverIcon(st);
+      const loc = (st.maneuver && st.maneuver.location) || [destLon, destLat];
+      rawSteps.push({ lon: loc[0], lat: loc[1], ico, along: 0, xy: null });
+    });
+  });
+
+  navRoute = {
+    destName, destLat, destLon,
+    coords: rawCoords,
+    localPts: [], cum: [0],
+    totalLen: routeData.distance || 1,
+    totalDur: routeData.duration || 0,
+    steps: rawSteps
+  };
+  lastChimeStep = -1;
+  if (!roadAnchorSet) rebuildLocal(targetLat, targetLon);
+  else projectNavRoute();
+
+  $('sigRoute').textContent = fmtRouteSummary(navRoute.totalLen, navRoute.totalDur);
+  $('routeProgFill').style.width = '2%';
+  syncNavUiState();
+  drawRoadMap();
+  if (!isReroute) toast(`Rota: ${fmtNavDist(navRoute.totalLen)}`);
+}
+
+function updateNavProgress(ox, oy){
+  if (!navRoute || !navRoute.localPts.length) return null;
+  const snap = snapToPolyline(ox, oy, navRoute.localPts, navRoute.cum);
+
+  if (!navRerouting && snap.offDist > 65 && Date.now() - lastRerouteAt > 12000){
+    lastRerouteAt = Date.now();
+    navRerouting = true;
+    $('navTurnDist').textContent = '…';
+    startRouteTo(navRoute.destName, navRoute.destLat, navRoute.destLon, true).finally(() => { navRerouting = false; });
+    return { snap, nextStep: null };
+  }
+
+  const remDist = Math.max(0, navRoute.totalLen - snap.along);
+  const doneFrac = navRoute.totalLen > 0 ? Math.max(0, Math.min(1, snap.along / navRoute.totalLen)) : 0;
+  const remSec = (navRoute.totalDur || 0) * (1 - doneFrac);
+  $('routeProgFill').style.width = (doneFrac * 100).toFixed(1) + '%';
+
+  let nextIdx = navRoute.steps.length - 1;
+  for (let i = 1; i < navRoute.steps.length; i++){
+    if (navRoute.steps[i].along > snap.along + 10){ nextIdx = i; break; }
+  }
+  const step = navRoute.steps[nextIdx] || navRoute.steps[navRoute.steps.length - 1];
+  const distToTurn = Math.max(0, step.along - snap.along);
+  lastDistToTurn = distToTurn;
+
+  if (autoZoom) targetZoomMeters = computeAutoZoomMeters(fixSpeed, distToTurn);
+
+  if (remDist < 28){
+    $('navIcon').innerHTML = TURN_SVGS.arrive;
+    $('navTurnDist').textContent = 'VARIŞ';
+    $('sigRoute').textContent = 'HEDEFE VARILDI';
+    $('routeProgFill').style.width = '100%';
+    if (lastChimeStep !== 9999){ lastChimeStep = 9999; playTurnChime(); }
+    return { snap, nextStep: step };
+  }
+
+  if (distToTurn <= 120 && lastChimeStep !== nextIdx){
+    lastChimeStep = nextIdx;
+    playTurnChime();
+  }
+
+  $('navIcon').innerHTML = TURN_SVGS[step.ico] || TURN_SVGS.straight;
+  $('navTurnDist').textContent = fmtNavDist(distToTurn);
+  $('sigRoute').textContent = fmtRouteSummary(remDist, remSec);
+
+  return { snap, nextStep: step };
+}
+
+function openNav(){
+  $('navModal').classList.add('open');
+  syncNavUiState();
+  storageInfo();
+  renderNavDefaults();
+  setTimeout(() => $('navInput').focus(), 50);
+}
+function closeNav(){ $('navModal').classList.remove('open'); }
+
+function renderNavDefaults(){
+  const l = $('navRes'); l.innerHTML = '';
+  if (!navRecent.length){
+    $('navHint').textContent = 'Örnek: Alsancak İzmir, Bodrum Marina, Muğla Otogar…';
+    return;
+  }
+  $('navHint').textContent = 'Son aranan hedefler';
+  navRecent.forEach(item => {
+    const o = document.createElement('div'); o.className = 'opt';
+    const dStr = targetLat !== null ? fmtNavDist(distKm(targetLat, targetLon, item.lat, item.lon) * 1000) : '';
+    o.innerHTML = `<div class="opt-top"><span>${item.name}</span><span class="opt-dist">${dStr}</span></div><div class="opt-sub">Son hedef</div>`;
+    o.onclick = () => { closeNav(); startRouteTo(item.name, item.lat, item.lon, false); };
+    l.appendChild(o);
+  });
+}
+
+$('navInput').addEventListener('input', e => {
+  clearTimeout(navSearchTimer);
+  const q = e.target.value.trim();
+  if (q.length < 2){ renderNavDefaults(); return; }
+  $('navHint').textContent = 'Adres aranıyor…';
+  navSearchTimer = setTimeout(async () => {
+    const l = $('navRes');
+    let items = [];
+    try{
+      const bias = (targetLat !== null && targetLon !== null) ? `&lat=${targetLat.toFixed(4)}&lon=${targetLon.toFixed(4)}` : '';
+      const d = await (await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6${bias}`)).json();
+      items = (d.features || []).map(f => {
+        const p = f.properties || {}, g = f.geometry && f.geometry.coordinates;
+        if (!g) return null;
+        const title = p.name || [p.street, p.housenumber].filter(Boolean).join(' ') || p.city || q;
+        const sub = [p.district || p.suburb, p.city || p.county, p.state, p.country].filter(Boolean).join(', ');
+        return { name: title, sub: sub || 'Konum', lat: g[1], lon: g[0] };
+      }).filter(Boolean);
+    }catch{}
+
+    if (!items.length){
+      try{
+        const d2 = await (await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=6&accept-language=tr`)).json();
+        items = (d2 || []).map(it => {
+          const parts = String(it.display_name || '').split(',');
+          return { name: parts[0].trim(), sub: parts.slice(1, 4).join(',').trim(), lat: parseFloat(it.lat), lon: parseFloat(it.lon) };
+        });
+      }catch{}
+    }
+
+    l.innerHTML = '';
+    $('navHint').textContent = items.length ? 'Gitmek istediğin adresi seç' : 'Sonuç bulunamadı';
+    items.forEach(it => {
+      const o = document.createElement('div'); o.className = 'opt';
+      const dStr = targetLat !== null ? fmtNavDist(distKm(targetLat, targetLon, it.lat, it.lon) * 1000) : '';
+      o.innerHTML = `<div class="opt-top"><span>${it.name}</span><span class="opt-dist">${dStr}</span></div><div class="opt-sub">${it.sub}</div>`;
+      o.onclick = () => { closeNav(); startRouteTo(it.name, it.lat, it.lon, false); };
+      l.appendChild(o);
+    });
+  }, 320);
+});
+
+/* ---------- HARİTA ÇİZİMİ (BOISE GECE MAVİSİ VE BUZ BEYAZI ESTETİĞİ) ---------- */
+function ptSegDistSq(px, py, ax, ay, bx, by){
+  const dx = bx - ax, dy = by - ay;
+  const lenSq = dx*dx + dy*dy;
+  let t = lenSq > 0 ? ((px - ax)*dx + (py - ay)*dy) / lenSq : 0;
+  t = Math.max(0, Math.min(1, t));
+  const cx = ax + t*dx, cy = ay + t*dy;
+  return (px - cx)*(px - cx) + (py - cy)*(py - cy);
+}
+
+const ROAD_STYLE = {
+  0: ['rgba(226, 244, 255, 0.86)', 2.7],  // Otoyol / Ekspres
+  1: ['rgba(186, 228, 255, 0.66)', 2.15], // Ana arter
+  2: ['rgba(142, 196, 236, 0.48)', 1.7],  // İkincil yol
+  3: ['rgba(108, 162, 206, 0.35)', 1.3],  // Üçüncül yol
+  4: ['rgba(84, 134, 178, 0.24)', 1.0],   // Ara sokak
+  6: ['rgba(130, 178, 220, 0.30)', 1.1, [6, 5]], // Demiryolu
+  7: ['rgba(72, 168, 232, 0.50)', 1.5],   // Nehir
+  8: ['rgba(116, 202, 248, 0.65)', 1.7]   // Kıyı şeridi
+};
+const DRAW_ORDER = [8, 7, 6, 4, 3, 2, 1, 0];
+let fadeCache = { w: 0, h: 0, gx: null, gy: null };
+
+function drawRoadMap(){
+  const w = roadCv.width, h = roadCv.height;
+  if (!w || !h) return;
+  const dp = DPR;
+  const br = 0.88 + 0.12 * Math.sin(Date.now() / 800);
+
+  rctx.setTransform(1, 0, 0, 1, 0, 0);
+  rctx.globalCompositeOperation = 'source-over';
+  rctx.clearRect(0, 0, w, h);
+
+  const tx = w * 0.5;
+  const ty = northUp ? h * 0.52 : h * 0.72;
+
+  /* Merkezde derin gece mavisi atmosfer derinliği */
+  const bgGlow = rctx.createRadialGradient(w * 0.5, h * 0.46, 0, w * 0.5, h * 0.48, Math.max(w, h) * 0.56);
+  bgGlow.addColorStop(0, 'rgba(15, 36, 66, 0.52)');
+  bgGlow.addColorStop(0.55, 'rgba(8, 20, 38, 0.26)');
+  bgGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  rctx.fillStyle = bgGlow;
+  rctx.fillRect(0, 0, w, h);
+
+  if (renderLat === null || renderLon === null){
+    rctx.fillStyle = 'rgba(125,211,252,.35)';
+    rctx.beginPath(); rctx.arc(tx, ty, 4 * dp, 0, Math.PI * 2); rctx.fill();
+    return;
+  }
+
+  const zoomMeters = renderZoomMeters;
+  const ppm = (h * 0.72) / zoomMeters;
+  const ox = (renderLon - ancLon) * ancMLon, oy = (renderLat - ancLat) * M_LAT;
+  const R = Math.max(zoomMeters * 1.9, 450);
+
+  const buckets = [[], [], [], [], [], [], [], [], []];
+  let best = null, bestSeg = 0, bestD = Infinity;
+  for (const way of roadWays){
+    if (way.bx0 - R > ox || way.bx1 + R < ox || way.by0 - R > oy || way.by1 + R < oy) continue;
+    buckets[way.cls].push(way);
+    if (!way.road) continue;
+    const pts = way.m;
+    for (let i = 0; i < pts.length - 1; i++){
+      const d = ptSegDistSq(ox, oy, pts[i][0], pts[i][1], pts[i+1][0], pts[i+1][1]);
+      if (d < bestD){ bestD = d; best = way; bestSeg = i; }
+    }
+  }
+  const matched = best && bestD <= 130 * 130 ? best : null;
+  const navState = navRoute ? updateNavProgress(ox, oy) : null;
+
+  const rad = renderHeading * Math.PI / 180;
+  const X = p => (p[0] - ox) * ppm, Y = p => -(p[1] - oy) * ppm;
+
+  rctx.save();
+  rctx.translate(tx, ty);
+  rctx.rotate(-rad);
+  rctx.lineCap = 'round';
+  rctx.lineJoin = 'round';
+
+  /* Otoyol ve ana arterler için hafif buz mavisi dış parlama */
+  for (const c of [1, 0]){
+    const list = buckets[c];
+    if (!list.length) continue;
+    rctx.strokeStyle = c === 0 ? 'rgba(96, 195, 255, 0.22)' : 'rgba(96, 195, 255, 0.12)';
+    rctx.lineWidth = (c === 0 ? 7.5 : 5.0) * dp;
+    rctx.beginPath();
+    for (const way of list){
+      const pts = way.m;
+      for (let i = 0; i < pts.length; i++){
+        if (i === 0) rctx.moveTo(X(pts[i]), Y(pts[i])); else rctx.lineTo(X(pts[i]), Y(pts[i]));
+      }
+    }
+    rctx.stroke();
+  }
+
+  /* Tüm yol ağının keskin çizimi */
+  for (const c of DRAW_ORDER){
+    const list = buckets[c];
+    if (!list.length) continue;
+    const st = ROAD_STYLE[c];
+    rctx.strokeStyle = st[0];
+    rctx.lineWidth = st[1] * dp;
+    if (st[2]) rctx.setLineDash(st[2].map(v => v * dp));
+    rctx.beginPath();
+    for (const way of list){
+      const pts = way.m;
+      for (let i = 0; i < pts.length; i++){
+        if (i === 0) rctx.moveTo(X(pts[i]), Y(pts[i])); else rctx.lineTo(X(pts[i]), Y(pts[i]));
+      }
+    }
+    rctx.stroke();
+    if (st[2]) rctx.setLineDash([]);
+  }
+
+  /* Aktif rota çizgisi */
+  if (navRoute && navRoute.localPts.length >= 2){
+    const rPts = navRoute.localPts;
+    const sn = navState && navState.snap ? navState.snap : snapToPolyline(ox, oy, rPts, navRoute.cum);
+
+    if (sn.seg > 0 || sn.t > 0.01){
+      rctx.beginPath();
+      rctx.moveTo(X(rPts[0]), Y(rPts[0]));
+      for (let i = 1; i <= sn.seg; i++) rctx.lineTo(X(rPts[i]), Y(rPts[i]));
+      rctx.lineTo(X(sn.pt), Y(sn.pt));
+      rctx.strokeStyle = 'rgba(56, 189, 248, 0.20)';
+      rctx.lineWidth = 3 * dp;
+      rctx.stroke();
+    }
+
+    rctx.beginPath();
+    rctx.moveTo(X(sn.pt), Y(sn.pt));
+    for (let i = sn.seg + 1; i < rPts.length; i++) rctx.lineTo(X(rPts[i]), Y(rPts[i]));
+    rctx.strokeStyle = `rgba(56, 189, 248, ${(0.36 * br).toFixed(3)})`;
+    rctx.lineWidth = 12 * dp;
+    rctx.stroke();
+
+    rctx.beginPath();
+    rctx.moveTo(X(sn.pt), Y(sn.pt));
+    for (let i = sn.seg + 1; i < rPts.length; i++) rctx.lineTo(X(rPts[i]), Y(rPts[i]));
+    rctx.strokeStyle = '#e0f7ff';
+    rctx.lineWidth = 3.5 * dp;
+    rctx.stroke();
+
+    if (navState && navState.nextStep && navState.nextStep.xy){
+      const nx = X(navState.nextStep.xy), ny = Y(navState.nextStep.xy);
+      rctx.fillStyle = 'rgba(56, 189, 248, 0.35)';
+      rctx.beginPath(); rctx.arc(nx, ny, 9.5 * dp, 0, Math.PI * 2); rctx.fill();
+      rctx.fillStyle = '#ffffff';
+      rctx.beginPath(); rctx.arc(nx, ny, 3.6 * dp, 0, Math.PI * 2); rctx.fill();
+    }
+
+    const endPt = rPts[rPts.length - 1];
+    const ex = X(endPt), ey = Y(endPt);
+    rctx.strokeStyle = '#bae6fd';
+    rctx.lineWidth = 2 * dp;
+    rctx.beginPath(); rctx.arc(ex, ey, 8.5 * dp * br, 0, Math.PI * 2); rctx.stroke();
+    rctx.fillStyle = '#38bdf8';
+    rctx.beginPath(); rctx.arc(ex, ey, 4 * dp, 0, Math.PI * 2); rctx.fill();
+  } else if (matched){
+    /* Rota yokken üzerinde bulunulan yolu ileriye doğru yumuşakça aydınlat */
+    const pts = matched.m, seg = bestSeg;
+    const a = pts[seg], b = pts[seg+1];
+    const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx*dx + dy*dy;
+    let tt = L2 > 0 ? ((ox - a[0])*dx + (oy - a[1])*dy) / L2 : 0;
+    tt = Math.max(0, Math.min(1, tt));
+    const p0 = [a[0] + tt*dx, a[1] + tt*dy];
+    const dir = (dx * Math.sin(targetHeading * Math.PI / 180) + dy * Math.cos(targetHeading * Math.PI / 180)) >= 0 ? 1 : -1;
+
+    const build = (d, maxLen) => {
+      const path = [p0], cum = [0];
+      let len = 0, j = d === 1 ? seg + 1 : seg;
+      while (j >= 0 && j < pts.length && len < maxLen){
+        const last = path[path.length - 1];
+        len += Math.hypot(pts[j][0] - last[0], pts[j][1] - last[1]);
+        path.push(pts[j]); cum.push(len);
+        j += d;
+      }
+      return { path, cum, len: Math.max(len, 1) };
+    };
+    const strokeFade = ({ path, cum, len }, aMax, aMin) => {
+      if (path.length < 2) return;
+      rctx.beginPath();
+      for (let i = 0; i < path.length; i++){ if (i === 0) rctx.moveTo(X(path[i]), Y(path[i])); else rctx.lineTo(X(path[i]), Y(path[i])); }
+      rctx.strokeStyle = `rgba(56, 189, 248, ${(aMax * 0.24 * br).toFixed(3)})`;
+      rctx.lineWidth = 9.5 * dp;
+      rctx.stroke();
+      const N = 8;
+      for (let c = 0; c < N; c++){
+        rctx.beginPath();
+        let any = false;
+        for (let i = 1; i < path.length; i++){
+          const mid = (cum[i-1] + cum[i]) / 2;
+          if (Math.min(N - 1, Math.floor(mid / len * N)) !== c) continue;
+          rctx.moveTo(X(path[i-1]), Y(path[i-1]));
+          rctx.lineTo(X(path[i]), Y(path[i]));
+          any = true;
+        }
+        if (!any) continue;
+        const al = aMax - (aMax - aMin) * ((c + 0.5) / N);
+        rctx.strokeStyle = `rgba(186, 232, 255, ${al.toFixed(3)})`;
+        rctx.lineWidth = 2.8 * dp;
+        rctx.stroke();
+      }
+    };
+    strokeFade(build(dir, zoomMeters * 1.25), 0.95, 0.12);
+    strokeFade(build(-dir, 55), 0.35, 0.05);
+  }
+  rctx.restore();
+
+  /* DÖRT KENARI OLED SİYAHA ERİTEN VİNYET MASKE */
+  if (!fadeCache.gx || fadeCache.w !== w || fadeCache.h !== h){
+    const ease = k => k <= 0 ? 0 : k >= 1 ? 1 : 0.5 - 0.5 * Math.cos(Math.PI * k);
+    const gx = rctx.createLinearGradient(0, 0, w, 0);
+    const gy = rctx.createLinearGradient(0, 0, 0, h);
+    for (let i = 0; i <= 32; i++){
+      const s = i / 32;
+      gx.addColorStop(s, `rgba(0,0,0,${ease(Math.min(s, 1 - s) / 0.16).toFixed(3)})`);
+      gy.addColorStop(s, `rgba(0,0,0,${(s < 0.5 ? ease(s / 0.18) : ease((1 - s) / 0.22)).toFixed(3)})`);
+    }
+    fadeCache = { w, h, gx, gy };
+  }
+  rctx.save();
+  rctx.globalCompositeOperation = 'destination-in';
+  rctx.fillStyle = fadeCache.gx; rctx.fillRect(0, 0, w, h);
+  rctx.fillStyle = fadeCache.gy; rctx.fillRect(0, 0, w, h);
+  rctx.restore();
+  rctx.globalCompositeOperation = 'source-over';
+
+  /* ARAÇ KONUM HALESİ & OKU */
+  const glow = rctx.createRadialGradient(tx, ty, 0, tx, ty, 76 * dp);
+  glow.addColorStop(0, `rgba(56, 189, 248, ${(0.28 * br).toFixed(3)})`);
+  glow.addColorStop(1, 'rgba(56, 189, 248, 0)');
+  rctx.fillStyle = glow;
+  rctx.beginPath(); rctx.arc(tx, ty, 76 * dp, 0, Math.PI * 2); rctx.fill();
+
+  rctx.save();
+  rctx.translate(tx, ty);
+  if (northUp) rctx.rotate(targetHeading * Math.PI / 180);
+  rctx.fillStyle = '#07111e';
+  rctx.strokeStyle = '#f59e0b';
+  rctx.lineWidth = 2.2 * dp;
+  rctx.beginPath();
+  rctx.moveTo(0, -11 * dp);
+  rctx.lineTo(8 * dp, 8 * dp);
+  rctx.lineTo(0, 3.8 * dp);
+  rctx.lineTo(-8 * dp, 8 * dp);
+  rctx.closePath();
+  rctx.fill();
+  rctx.stroke();
+  rctx.restore();
+}
+
+setInterval(() => { if (!roadAnimRaf && renderLat !== null && !document.hidden) drawRoadMap(); }, 220);
+
+/* ---------- YAKLAŞAN HAVA / YOL UYARISI (30 / 60 / 100 KM) ---------- */
+let aheadLast = { t: 0, lat: null, lon: null }, aheadBusy = false, aheadShown = false;
+function aheadPoint(lat, lon, bearing, km){
+  const b = bearing * Math.PI / 180;
+  return [lat + km * Math.cos(b) / 110.54, lon + km * Math.sin(b) / (111.32 * Math.max(0.2, Math.cos(lat * Math.PI / 180)))];
+}
+function hazardOf(c){
+  const code = c.weather_code, temp = c.temperature_2m, gust = c.wind_gusts_10m || 0, pr = c.precipitation || 0;
+  const wet = [51,53,55,61,63,65,80,81,82,71,73,75,77,85,86].includes(code);
+  if ([95,96,99].includes(code)) return { sev: 5, txt: 'GÖK GÜRÜLTÜLÜ FIRTINA' };
+  if ([56,57,66,67].includes(code) || (temp <= 3 && (pr > 0.1 || wet))) return { sev: 5, txt: 'BUZLANMA RİSKİ' };
+  if ([71,73,75,77,85,86].includes(code)) return { sev: 4, txt: 'KAR YAĞIŞI' };
+  if (gust >= 55) return { sev: 4, txt: 'SERT RÜZGÂR ' + Math.round(gust) + ' KM/SA' };
+  if ([45,48].includes(code)) return { sev: 3, txt: 'SİS' };
+  if ([65,82].includes(code)) return { sev: 3, txt: 'YOĞUN YAĞMUR' };
+  if ([51,53,55,61,63,80,81].includes(code)) return { sev: 2, txt: 'YAĞMUR' };
+  return null;
+}
+function showAhead(b){
+  const chip = $('aheadChip');
+  if (!b){ aheadShown = false; chip.classList.remove('on'); return; }
+  $('aheadText').textContent = `${b.km} KM ÖNDE · ${b.txt}`;
+  aheadShown = true; chip.classList.add('on');
+}
+async function checkAhead(){
+  if (aheadBusy || fixLat === null) return;
+  const now = Date.now();
+  if (fixSpeed < 5 || now - fixTime > 15000) return;
+  const moved = aheadLast.lat !== null ? distKm(aheadLast.lat, aheadLast.lon, fixLat, fixLon) : 99;
+  if (now - aheadLast.t < 8 * 60000 && moved < 12) return;
+  aheadBusy = true; aheadLast = { t: now, lat: fixLat, lon: fixLon };
+  try{
+    const kms = [30, 60, 100];
+    const pts = kms.map(k => aheadPoint(fixLat, fixLon, fixHead, k));
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${pts.map(p => p[0].toFixed(3)).join(',')}&longitude=${pts.map(p => p[1].toFixed(3)).join(',')}&current=temperature_2m,precipitation,weather_code,wind_gusts_10m&timezone=auto`;
+    const d = await (await fetch(url)).json();
+    const arr = Array.isArray(d) ? d : [d];
+    let best = null;
+    arr.forEach((o, i) => {
+      const c = o && o.current; if (!c) return;
+      const h = hazardOf(c);
+      if (h && (!best || h.sev > best.sev || (h.sev === best.sev && kms[i] < best.km))) best = { sev: h.sev, txt: h.txt, km: kms[i] };
+    });
+    showAhead(best);
+  }catch{}
+  finally{ aheadBusy = false; }
+}
+setInterval(checkAhead, 30000);
+setInterval(() => { if (aheadShown && Date.now() - aheadLast.t > 25 * 60000) showAhead(null); }, 10000);
+
+/* ---------- GPS, KONUM İMZASI & PUSULA YÖNÜ ---------- */
+function dms(v, pos, neg){
+  const a = Math.abs(v); let d = Math.floor(a), m = Math.floor((a-d)*60), s = Math.round(((a-d)*60-m)*60);
+  if (s===60){ s=0; m++; } if (m===60){ m=0; d++; }
+  return `${d}°${pad(m)}'${pad(s)}" ${v>=0?pos:neg}`;
+}
+function distKm(a,b,c,d){
+  const R=6371,r=Math.PI/180,dl=(c-a)*r,dn=(d-b)*r;
+  const x=Math.sin(dl/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin(dn/2)**2;
+  return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+}
+
+let compassOn = false, gpsHeadTime = 0;
+function onOrient(e){
+  if (Date.now() - gpsHeadTime < 5000) return;
+  let h = typeof e.webkitCompassHeading === 'number' ? e.webkitCompassHeading : (e.absolute && e.alpha != null ? 360 - e.alpha : null);
+  if (h == null) return;
+  const ang = (screen.orientation && screen.orientation.angle != null) ? screen.orientation.angle : (window.orientation || 0);
+  targetHeading = (h + ang + 360) % 360;
+  kickRoadAnim();
+}
+function startCompass(){
+  if (compassOn) return; compassOn = true;
+  const D = window.DeviceOrientationEvent;
+  if (D && typeof D.requestPermission === 'function'){
+    D.requestPermission().then(r => { if (r === 'granted') window.addEventListener('deviceorientation', onOrient, true); else compassOn = false; }).catch(() => { compassOn = false; });
+  } else {
+    window.addEventListener('deviceorientationabsolute', onOrient, true);
+    window.addEventListener('deviceorientation', onOrient, true);
+  }
+}
+document.addEventListener('click', startCompass, { once: true });
+
+const KM_TH = 2.5, T_TH = 3 * 60 * 1000;
+let lastGeoLat = null, lastGeoLon = null, lastGeoAt = 0;
+
+async function updatePlaceSignature(lat, lon, force=false){
+  const now = Date.now(), moved = lastGeoLat !== null ? distKm(lastGeoLat, lastGeoLon, lat, lon) : 99;
+  if (!force && lastGeoLat !== null && moved < KM_TH && now - lastGeoAt < T_TH) return;
+  lastGeoLat = lat; lastGeoLon = lon; lastGeoAt = now;
+  try{
+    const d = await (await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=tr`)).json();
+    const loc = (d.locality || d.city || '').toUpperCase();
+    const prov = (d.principalSubdivision || '').toUpperCase();
+    const country = (d.countryName || 'TÜRKİYE').toUpperCase();
+    if (loc && prov && loc !== prov){
+      $('sigCity').textContent = loc;
+      $('sigSub').textContent = `${prov} · ${country}`;
+    } else {
+      $('sigCity').textContent = prov || loc || 'KONUM';
+      $('sigSub').textContent = country;
+    }
+  }catch{}
+}
+
+function updateGeo(c){
+  $('sigCoords').textContent = `${dms(c.latitude, 'N', 'S')} · ${dms(c.longitude, 'E', 'W')}`;
+  if (c.speed > 1.5 && c.heading != null && isFinite(c.heading)){
+    gpsHeadTime = Date.now();
+    targetHeading = c.heading;
+  }
+  fixSpeed = (c.speed != null && isFinite(c.speed) && c.speed > 0) ? c.speed : 0;
+  fixHead = (c.speed > 1.5 && c.heading != null && isFinite(c.heading)) ? c.heading : targetHeading;
+  fixLat = c.latitude; fixLon = c.longitude; fixTime = Date.now();
+
+  if (autoZoom) targetZoomMeters = computeAutoZoomMeters(fixSpeed, lastDistToTurn);
+  updateSlope(c.latitude, c.longitude, c.altitude);
+  if (fixSpeed >= 5) checkAhead();
+
+  targetLat = c.latitude;
+  targetLon = c.longitude;
+  fetchRoadNetwork(targetLat, targetLon, false);
+  updatePlaceSignature(c.latitude, c.longitude, false);
+  kickRoadAnim();
+}
+
+function startGps(){
+  if (!('geolocation' in navigator)) return ipFallback();
+  navigator.geolocation.watchPosition(
+    p => updateGeo(p.coords),
+    () => { if (targetLat === null) ipFallback(); },
+    { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
+  );
+  setInterval(() => {
+    navigator.geolocation.getCurrentPosition(p => updateGeo(p.coords), () => {}, { enableHighAccuracy: true, timeout: 8000 });
+  }, T_TH);
+}
+
+async function ipFallback(){
+  try{
+    const d = await (await fetch('https://ipwho.is/')).json();
+    if (d && d.latitude){
+      targetLat = renderLat = d.latitude;
+      targetLon = renderLon = d.longitude;
+      $('sigCity').textContent = (d.city || 'MUĞLA').toUpperCase();
+      $('sigSub').textContent = (d.country || 'TÜRKİYE').toUpperCase();
+      $('sigCoords').textContent = `${dms(d.latitude, 'N', 'S')} · ${dms(d.longitude, 'E', 'W')}`;
+      fetchRoadNetwork(targetLat, targetLon, true);
+      drawRoadMap();
+      return;
+    }
+  }catch{}
+  targetLat = renderLat = 37.2153; targetLon = renderLon = 28.3636;
+  $('sigCity').textContent = 'MUĞLA';
+  $('sigSub').textContent = 'TÜRKİYE';
+  $('sigCoords').textContent = `${dms(targetLat, 'N', 'S')} · ${dms(targetLon, 'E', 'W')}`;
+  fetchRoadNetwork(targetLat, targetLon, true);
+  drawRoadMap();
+}
+
+/* ---------- DİK TELEFON → YATAY EKRAN ---------- */
+const scr = $('screen'), modes = ['cw', 'ccw', 'off'];
+const modeNames = { cw: 'Ekran yönü: sağa', ccw: 'Ekran yönü: sola', off: 'Döndürme kapalı' };
+function getMode(){ try{ return localStorage.getItem('rot') || 'cw'; }catch{ return 'cw'; } }
+function toggleRotMode(){
+  const m = modes[(modes.indexOf(getMode()) + 1) % modes.length];
+  try{ localStorage.setItem('rot', m); }catch{}
+  applyLayout();
+  toast(modeNames[m]);
+}
+function applyLayout(){
+  const W = innerWidth, H = innerHeight, mode = getMode();
+  let w = W, h = H;
+  if (H > W && mode !== 'off'){
+    w = H; h = W;
+    scr.style.cssText = `position:fixed;left:0;top:0;width:${w}px;height:${h}px;transform-origin:0 0;` +
+      `transform:${mode === 'cw' ? `translateX(${W}px) rotate(90deg)` : `translateY(${H}px) rotate(-90deg)`}`;
+    document.documentElement.style.setProperty('--px', w * .032 + 'px');
+  } else {
+    scr.style.cssText = '';
+    document.documentElement.style.removeProperty('--px');
+  }
+  document.documentElement.style.setProperty('--vh', h / 100 + 'px');
+  document.documentElement.style.setProperty('--vw', w / 100 + 'px');
+  roadSize();
+}
+
+addEventListener('resize', applyLayout);
+addEventListener('orientationchange', () => setTimeout(applyLayout, 150));
+if (typeof ResizeObserver !== 'undefined'){
+  let roRaf = 0;
+  const ro = new ResizeObserver(() => {
+    if (roRaf) return;
+    roRaf = requestAnimationFrame(() => { roRaf = 0; roadSize(); });
+  });
+  ro.observe(roadCv);
+}
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden){ lastStepTs = 0; kickRoadAnim(); drawRoadMap(); }
+});
+
+applyLayout();
+startGps();
+</script>
+</body>
+</html>
