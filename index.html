@@ -20,7 +20,8 @@
   --py:max(env(safe-area-inset-top),clamp(14px,calc(2.6*var(--vh)),28px));
   --compass-top:max(env(safe-area-inset-top),2px);
   --compass-h:clamp(24px,calc(4.1*var(--vh)),34px);
-  --wave-h:clamp(32px,calc(5.8*var(--vh)),48px);
+  --eq-h:clamp(16px,calc(2.8*var(--vh)),24px);
+  --radio-line-h:clamp(18px,calc(3.1*var(--vh)),25px);
   --bg:#000000;
   --card:#11161f;
   --line:rgba(148,197,232,.14);
@@ -106,97 +107,83 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 }
 .ahead-chip.on{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* EKOLAYZIRIN HEMEN SOL ÜSTÜ: ARKA PLANSIZ, YUVARLAK DÜĞMELİ RADYO OYNATICI */
-.radio-pill{
-  position:absolute;left:var(--px);
-  bottom:calc(max(env(safe-area-inset-bottom),2px) + var(--wave-h) + clamp(4px,calc(.8*var(--vh)),10px));
-  z-index:8;display:flex;align-items:center;gap:clamp(9px,calc(1.4*var(--vw)),14px);
-  max-width:min(320px,42vw);background:transparent;pointer-events:auto
+/* EKOLAYZIRIN HEMEN ÜSTÜ: GÖRSELDEKİ GİBİ KUTUSUZ, TEK SATIR RADYO METNİ */
+.radio-strip{
+  position:absolute;left:var(--px);right:var(--px);
+  bottom:calc(max(env(safe-area-inset-bottom),2px) + var(--eq-h) + clamp(4px,calc(.65*var(--vh)),8px));
+  height:var(--radio-line-h);z-index:8;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  pointer-events:auto;background:transparent
 }
-.rp-disc{
-  width:clamp(34px,calc(6.2*var(--vh)),46px);height:clamp(34px,calc(6.2*var(--vh)),46px);
-  border-radius:50%;background:radial-gradient(circle at 35% 30%,#ef6464,#c83e3e);
-  box-shadow:0 0 18px rgba(224,82,82,.42),inset 0 1px 2px rgba(255,255,255,.35);
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  color:#ffffff;transition:transform .15s,box-shadow .2s
+.rs-main{
+  display:flex;align-items:baseline;gap:0;min-width:0;flex:1;
+  font-size:clamp(11px,calc(1.95*var(--vh)),15.5px);letter-spacing:.02em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  text-shadow:0 1px 8px rgba(0,0,0,.95)
 }
-.rp-disc:active{transform:scale(.92)}
-.rp-disc.playing{box-shadow:0 0 24px rgba(239,100,100,.68),inset 0 1px 2px rgba(255,255,255,.45)}
-.rp-disc svg{width:46%;height:46%;fill:currentColor}
-.rp-info{
-  display:flex;flex-direction:column;align-items:flex-start;min-width:0;flex:1;gap:2px
+.rs-track{
+  font-weight:600;color:#e6f6ff;cursor:pointer;overflow:hidden;text-overflow:ellipsis
 }
-.rp-top-row{display:flex;align-items:center;gap:6px;width:100%}
-.rp-station{
-  font-size:clamp(8.5px,calc(1.3*var(--vh)),10.5px);font-weight:600;letter-spacing:.14em;
-  text-transform:uppercase;color:var(--ice-sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;
-  text-shadow:0 1px 6px rgba(0,0,0,.9);cursor:pointer
+.rs-track.paused{color:rgba(210,235,250,.55)}
+.rs-sep{
+  font-weight:400;color:rgba(176,216,245,.52);margin:0 7px;flex-shrink:0
 }
-.rp-nav-btns{display:flex;align-items:center;gap:3px;flex-shrink:0}
-.rp-step{
-  font-size:clamp(9px,calc(1.4*var(--vh)),11px);color:var(--ice-dim);padding:1px 4px;line-height:1;
-  transition:color .15s
+.rs-station{
+  font-weight:500;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(186,225,250,.72);cursor:pointer;flex-shrink:0
 }
-.rp-step:active{color:#ffffff}
-.rp-track{
-  font-size:clamp(11px,calc(1.85*var(--vh)),14.5px);font-weight:600;letter-spacing:.02em;
-  color:#ffffff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;
-  text-shadow:0 1px 8px rgba(0,0,0,.95);cursor:pointer
+.rs-station:hover{color:#ffffff}
+.rs-controls{
+  display:flex;align-items:center;gap:6px;flex-shrink:0;
+  opacity:.72;transition:opacity .2s
 }
-.rp-bar{
-  margin-top:2px;width:100%;height:3px;border-radius:999px;
-  background:rgba(255,255,255,.22);overflow:hidden
+.radio-strip:hover .rs-controls{opacity:1}
+.rs-btn{
+  font-size:clamp(9.5px,calc(1.45*var(--vh)),11.5px);font-weight:600;
+  color:var(--ice-dim);padding:2px 4px;line-height:1;transition:color .15s
 }
-.rp-fill{
-  height:100%;width:35%;border-radius:999px;
-  background:linear-gradient(90deg,#e05252,#ff7b7b);
-  transition:width .5s linear
-}
-.rp-meta{
-  margin-top:1px;font-size:clamp(7.5px,calc(1.15*var(--vh)),9.5px);font-weight:600;
-  letter-spacing:.12em;color:var(--ice-dim);font-variant-numeric:tabular-nums;
-  text-shadow:0 1px 6px rgba(0,0,0,.9)
-}
+.rs-btn:active,.rs-btn.active{color:#ffffff}
 
-/* ALT ORTA-SAĞ: PARLAK ŞEHİR İMZASI + ROTA ÖZETİ */
+/* ALT ORTA: PARLAK ŞEHİR İMZASI + ROTA ÖZETİ (RADYO SATIRININ ÜSTÜNDE) */
 .sig-wrap{
-  position:absolute;left:58%;
-  bottom:calc(max(env(safe-area-inset-bottom),2px) + var(--wave-h) + clamp(4px,calc(.8*var(--vh)),10px));
+  position:absolute;left:50%;
+  bottom:calc(max(env(safe-area-inset-bottom),2px) + var(--eq-h) + var(--radio-line-h) + clamp(8px,calc(1.3*var(--vh)),16px));
   transform:translateX(-50%);z-index:6;
   display:flex;flex-direction:column;align-items:center;text-align:center;
-  padding:4px 16px;cursor:pointer;max-width:52vw
+  padding:4px 20px;cursor:pointer;max-width:88vw
 }
 .sig-city{
-  font-size:clamp(15px,calc(2.9*var(--vh)),24px);font-weight:600;letter-spacing:.28em;
+  font-size:clamp(16px,calc(3.0*var(--vh)),25px);font-weight:600;letter-spacing:.30em;
   text-transform:uppercase;color:#ffffff;
   text-shadow:0 0 22px rgba(186,232,255,.52), 0 0 8px rgba(255,255,255,.25);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:50vw;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:82vw;
   transition:color .2s
 }
 .sig-wrap:active .sig-city{color:#bae6fd}
 .sig-sub{
-  margin-top:clamp(2px,calc(.5*var(--vh)),5px);
-  font-size:clamp(8px,calc(1.3*var(--vh)),10.5px);font-weight:500;letter-spacing:.22em;
+  margin-top:clamp(2px,calc(.55*var(--vh)),5px);
+  font-size:clamp(8.5px,calc(1.35*var(--vh)),10.5px);font-weight:500;letter-spacing:.24em;
   text-transform:uppercase;color:var(--ice-sub);
   text-shadow:0 0 12px rgba(148,210,255,.28);
   white-space:nowrap
 }
 .sig-route{
-  display:none;margin-top:clamp(4px,calc(.75*var(--vh)),7px);
-  font-size:clamp(9px,calc(1.45*var(--vh)),11.5px);font-weight:600;letter-spacing:.16em;
+  display:none;margin-top:clamp(4px,calc(.8*var(--vh)),7px);
+  font-size:clamp(9px,calc(1.5*var(--vh)),11.5px);font-weight:600;letter-spacing:.18em;
   text-transform:uppercase;color:var(--ice);font-variant-numeric:tabular-nums;white-space:nowrap;
   text-shadow:0 0 12px rgba(125,211,252,.4)
 }
 .sig-route.on{display:block}
 
-/* EN ALT: 60 FPS KATMANLI NEON SES DALGASI EKOLAYZIRI */
-.bottom-wave{
-  position:absolute;left:0;right:0;bottom:max(env(safe-area-inset-bottom),2px);
-  height:var(--wave-h);z-index:7;pointer-events:none;
-  -webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 6%,#000 94%,transparent 100%);
-  mask-image:linear-gradient(90deg,transparent 0%,#000 6%,#000 94%,transparent 100%)
+/* EN ALT: GÖRSELDEKİ GİBİ YATAY NOKTA / ÇUBUK SPEKTRUM EKOLAYZIRI */
+.bottom-eq{
+  position:absolute;left:var(--px);right:var(--px);
+  bottom:max(env(safe-area-inset-bottom),2px);
+  height:var(--eq-h);z-index:7;pointer-events:none;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 3%,#000 97%,transparent 100%);
+  mask-image:linear-gradient(90deg,transparent 0%,#000 3%,#000 97%,transparent 100%)
 }
-.wave-cv{width:100%;height:100%;display:block}
+.eq-cv{width:100%;height:100%;display:block}
 
 /* BİLDİRİM TOAST */
 .toast{
@@ -257,22 +244,18 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
     <span id="aheadText"></span>
   </div>
 
-  <!-- EKOLAYZIRIN HEMEN SOL ÜSTÜ: ARKA PLANSIZ RADYO OYNATICI -->
-  <div class="radio-pill" id="radioPill">
-    <button class="rp-disc" id="rpPlayBtn" onclick="toggleRadio()" aria-label="Oynat / Durdur">
-      <svg id="rpPlaySvg" viewBox="0 0 24 24"><polygon points="7,4 20,12 7,20"/></svg>
-    </button>
-    <div class="rp-info">
-      <div class="rp-top-row">
-        <span class="rp-station" id="rpStation" onclick="openRadioModal()">NIGHTRIDE FM</span>
-        <div class="rp-nav-btns">
-          <button class="rp-step" onclick="prevStation()" title="Önceki kanal">◀</button>
-          <button class="rp-step" onclick="nextStation()" title="Sonraki kanal">▶</button>
-        </div>
-      </div>
-      <div class="rp-track" id="rpTrack" onclick="openRadioModal()">Synthwave & Outrun</div>
-      <div class="rp-bar"><div class="rp-fill" id="rpFill"></div></div>
-      <div class="rp-meta" id="rpMeta">HAZIR · 1/16</div>
+  <!-- EKOLAYZIRIN HEMEN ÜSTÜ: GÖRSELDEKİ GİBİ KUTUSUZ TEK SATIR RADYO -->
+  <div class="radio-strip" id="radioStrip">
+    <div class="rs-main">
+      <span class="rs-track paused" id="rsTrack" onclick="toggleRadio()">StockXL - Lunar Radio (Spacesynth 80)</span>
+      <span class="rs-sep">-</span>
+      <span class="rs-station" id="rsStation" onclick="openRadioModal()">NIGHTRIDE FM</span>
+    </div>
+    <div class="rs-controls">
+      <button class="rs-btn" id="rsPlayBtn" onclick="toggleRadio()" title="Oynat / Durdur">▶</button>
+      <button class="rs-btn" onclick="prevStation()" title="Önceki kanal">◀</button>
+      <button class="rs-btn" onclick="nextStation()" title="Sonraki kanal">▶</button>
+      <button class="rs-btn" onclick="openRadioModal()" title="Kanallar">≡</button>
     </div>
   </div>
 
@@ -283,9 +266,9 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
     <div class="sig-route" id="sigRoute">--</div>
   </div>
 
-  <!-- EN ALT: 60 FPS KATMANLI NEON SES DALGASI EKOLAYZIRI -->
-  <div class="bottom-wave">
-    <canvas class="wave-cv" id="waveCanvas"></canvas>
+  <!-- EN ALT: GÖRSELDEKİ GİBİ YATAY SPEKTRUM EKOLAYZIRI -->
+  <div class="bottom-eq">
+    <canvas class="eq-cv" id="eqCanvas"></canvas>
   </div>
 
   <div class="toast" id="toast"></div>
@@ -295,7 +278,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 <div class="modal" id="radioModal" onclick="closeRadioModal()">
   <div class="panel" onclick="event.stopPropagation()">
     <div style="display:flex;justify-content:space-between;align-items:center">
-      <strong style="font-size:13.5px;font-weight:600;letter-spacing:.08em;color:var(--ice-bright)">RADYO İSTASYONLARI (16)</strong>
+      <strong style="font-size:13.5px;font-weight:600;letter-spacing:.08em;color:var(--ice-bright)">RADYO İSTASYONLARI</strong>
       <button class="btn-dim" onclick="closeRadioModal()">Kapat</button>
     </div>
     <div class="res" id="stationList" style="max-height:310px"></div>
@@ -347,50 +330,40 @@ function toast(t){
   toast.t = setTimeout(() => el.classList.remove('on'), 1600);
 }
 
-/* ---------- RADYO OYNATICI (NIGHTRIDE FM, RADIO PARADISE & +10 SEÇKİN İSTASYON) ---------- */
+/* ---------- RADYO OYNATICI (GÖRSELDEKİ GİBİ TEK SATIR: ŞARKI - KANAL) ---------- */
 const STATIONS = [
-  { name: 'NIGHTRIDE FM',        genre: 'Synthwave · Outrun',         url: 'https://stream.nightride.fm/nightride.mp3',   metaType: 'nightride', metaKey: 'nightride' },
-  { name: 'CHILLSYNTH FM',       genre: 'Chillsynth · Ambient',       url: 'https://stream.nightride.fm/chillsynth.mp3',  metaType: 'nightride', metaKey: 'chillsynth' },
-  { name: 'DARKSYNTH FM',        genre: 'Darksynth · Cyberpunk',      url: 'https://stream.nightride.fm/darksynth.mp3',   metaType: 'nightride', metaKey: 'darksynth' },
-  { name: 'HORRORSYNTH FM',      genre: 'Horrorsynth · Retro',        url: 'https://stream.nightride.fm/horrorsynth.mp3', metaType: 'nightride', metaKey: 'horrorsynth' },
-  { name: 'EBSM FM',             genre: 'EBM · Industrial Synth',     url: 'https://stream.nightride.fm/ebsm.mp3',        metaType: 'nightride', metaKey: 'ebsm' },
-  { name: 'RADIO PARADISE',      genre: 'Eclectic · Main Mix',        url: 'https://stream.radioparadise.com/aac-320',    metaType: 'rp',        metaKey: 0 },
-  { name: 'RP MELLOW MIX',       genre: 'Mellow · Chillout',          url: 'https://stream.radioparadise.com/mellow-320', metaType: 'rp',        metaKey: 1 },
-  { name: 'RP ROCK MIX',         genre: 'Classic & Indie Rock',       url: 'https://stream.radioparadise.com/rock-320',   metaType: 'rp',        metaKey: 2 },
-  { name: 'RP GLOBAL MIX',       genre: 'World · Global Grooves',     url: 'https://stream.radioparadise.com/global-320', metaType: 'rp',        metaKey: 3 },
-  { name: 'SOMAFM GROOVE SALAD', genre: 'Ambient · Downtempo',        url: 'https://ice2.somafm.com/groovesalad-256-mp3', metaType: 'soma',      metaKey: 'groovesalad' },
-  { name: 'SOMAFM DRONE ZONE',   genre: 'Atmospheric · Deep',         url: 'https://ice2.somafm.com/dronezone-256-mp3',   metaType: 'soma',      metaKey: 'dronezone' },
-  { name: 'SOMAFM DEFCON',       genre: 'Cyber · Hacker Beats',       url: 'https://ice2.somafm.com/defcon-256-mp3',      metaType: 'soma',      metaKey: 'defcon' },
-  { name: 'FIP RADIO',           genre: 'Paris · Eclectic Jazz',      url: 'https://icecast.radiofrance.fr/fip-hifi.aac', metaType: 'static' },
-  { name: 'KEXP 90.3 FM',        genre: 'Seattle · Indie & Alt',      url: 'https://kexp-mp3-128.streamguys1.com/kexp128.mp3', metaType: 'static' },
-  { name: 'IBIZA GLOBAL RADIO',  genre: 'Deep House · Balearic',      url: 'https://listenssl.ibizaglobalradio.com:8024/ibizaglobalradio.mp3', metaType: 'static' },
-  { name: 'JAZZ24',              genre: '24/7 Classic & Modern Jazz', url: 'https://live.amperwave.net/direct/ppm-jazz24aac-ibc1', metaType: 'static' }
+  { name: 'NIGHTRIDE FM',        defaultTrack: 'StockXL - Lunar Radio (Spacesynth 80)', url: 'https://stream.nightride.fm/nightride.mp3',   metaType: 'nightride', metaKey: 'nightride' },
+  { name: 'CHILLSYNTH FM',       defaultTrack: 'Midnight Horizon - Sunset Drift',         url: 'https://stream.nightride.fm/chillsynth.mp3',  metaType: 'nightride', metaKey: 'chillsynth' },
+  { name: 'DARKSYNTH FM',        defaultTrack: 'Neon Sector - Chrome Pulse',            url: 'https://stream.nightride.fm/darksynth.mp3',   metaType: 'nightride', metaKey: 'darksynth' },
+  { name: 'HORRORSYNTH FM',      defaultTrack: 'Crimson Fog - Midnight Signal',         url: 'https://stream.nightride.fm/horrorsynth.mp3', metaType: 'nightride', metaKey: 'horrorsynth' },
+  { name: 'EBSM FM',             defaultTrack: 'Klangwerk - Voltage Line',              url: 'https://stream.nightride.fm/ebsm.mp3',        metaType: 'nightride', metaKey: 'ebsm' },
+  { name: 'RADIO PARADISE',      defaultTrack: 'Eclectic Main Stream',                  url: 'https://stream.radioparadise.com/aac-320',    metaType: 'rp',        metaKey: 0 },
+  { name: 'RP MELLOW MIX',       defaultTrack: 'Mellow & Chill Stream',                 url: 'https://stream.radioparadise.com/mellow-320', metaType: 'rp',        metaKey: 1 },
+  { name: 'RP ROCK MIX',         defaultTrack: 'Rock Mix Stream',                       url: 'https://stream.radioparadise.com/rock-320',   metaType: 'rp',        metaKey: 2 },
+  { name: 'RP GLOBAL MIX',       defaultTrack: 'Global Grooves Stream',                 url: 'https://stream.radioparadise.com/global-320', metaType: 'rp',        metaKey: 3 },
+  { name: 'SOMAFM GROOVE SALAD', defaultTrack: 'Groove Salad Ambient',                  url: 'https://ice2.somafm.com/groovesalad-256-mp3', metaType: 'soma',      metaKey: 'groovesalad' },
+  { name: 'SOMAFM DRONE ZONE',   defaultTrack: 'Drone Zone Deep Space',                 url: 'https://ice2.somafm.com/dronezone-256-mp3',   metaType: 'soma',      metaKey: 'dronezone' },
+  { name: 'SOMAFM DEFCON',       defaultTrack: 'Defcon Radio Beats',                    url: 'https://ice2.somafm.com/defcon-256-mp3',      metaType: 'soma',      metaKey: 'defcon' },
+  { name: 'FIP RADIO',           defaultTrack: 'FIP Paris Eclectic',                    url: 'https://icecast.radiofrance.fr/fip-hifi.aac', metaType: 'static' },
+  { name: 'KEXP 90.3 FM',        defaultTrack: 'KEXP Seattle Live',                     url: 'https://kexp-mp3-128.streamguys1.com/kexp128.mp3', metaType: 'static' },
+  { name: 'IBIZA GLOBAL RADIO',  defaultTrack: 'Ibiza Global Deep',                     url: 'https://listenssl.ibizaglobalradio.com:8024/ibizaglobalradio.mp3', metaType: 'static' },
+  { name: 'JAZZ24',              defaultTrack: 'Jazz24 Nonstop Jazz',                   url: 'https://live.amperwave.net/direct/ppm-jazz24aac-ibc1', metaType: 'static' }
 ];
 
-let stIdx = 0, radioPlaying = false, playSeconds = 0;
+let stIdx = 0, radioPlaying = false;
 const audioEl = $('radioAudio');
 let eqCtx = null, eqSrc = null, analyserNode = null, freqBuf = null;
 
 function renderStation(){
   const st = STATIONS[stIdx];
-  $('rpStation').textContent = st.name;
-  $('rpTrack').textContent = st.currentTrack || st.genre;
-  $('rpPlayBtn').classList.toggle('playing', radioPlaying);
-  $('rpPlaySvg').innerHTML = radioPlaying
-    ? '<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>'
-    : '<polygon points="7,4 20,12 7,20"/>';
-  const m = Math.floor(playSeconds / 60), s = playSeconds % 60;
-  $('rpMeta').textContent = `${radioPlaying ? `${m}:${pad(s)}` : 'HAZIR'} · ${stIdx + 1}/${STATIONS.length}`;
-  $('rpFill').style.width = radioPlaying ? `${28 + ((playSeconds * 3) % 68)}%` : '22%';
+  const trk = $('rsTrack');
+  trk.textContent = st.currentTrack || st.defaultTrack;
+  trk.classList.toggle('paused', !radioPlaying);
+  $('rsStation').textContent = st.name;
+  $('rsPlayBtn').textContent = radioPlaying ? '❚❚' : '▶';
+  $('rsPlayBtn').classList.toggle('active', radioPlaying);
 }
 renderStation();
-
-setInterval(() => {
-  if (radioPlaying){
-    playSeconds++;
-    renderStation();
-  }
-}, 1000);
 
 async function fetchNowPlaying(){
   const st = STATIONS[stIdx];
@@ -431,8 +404,8 @@ function ensureAudioAnalyser(){
     eqCtx = new AC();
     eqSrc = eqCtx.createMediaElementSource(audioEl);
     analyserNode = eqCtx.createAnalyser();
-    analyserNode.fftSize = 128;
-    analyserNode.smoothingTimeConstant = 0.82;
+    analyserNode.fftSize = 256;
+    analyserNode.smoothingTimeConstant = 0.78;
     freqBuf = new Uint8Array(analyserNode.frequencyBinCount);
     eqSrc.connect(analyserNode);
     analyserNode.connect(eqCtx.destination);
@@ -441,7 +414,6 @@ function ensureAudioAnalyser(){
 
 async function playCurrentStation(){
   const st = STATIONS[stIdx];
-  playSeconds = 0;
   ensureAudioAnalyser();
   if (eqCtx && eqCtx.state === 'suspended') eqCtx.resume().catch(() => {});
   audioEl.src = st.url;
@@ -471,7 +443,6 @@ function toggleRadio(){
 
 function nextStation(){
   stIdx = (stIdx + 1) % STATIONS.length;
-  playSeconds = 0;
   renderStation();
   fetchNowPlaying();
   if (radioPlaying) playCurrentStation();
@@ -480,7 +451,6 @@ function nextStation(){
 
 function prevStation(){
   stIdx = (stIdx - 1 + STATIONS.length) % STATIONS.length;
-  playSeconds = 0;
   renderStation();
   fetchNowPlaying();
   if (radioPlaying) playCurrentStation();
@@ -493,7 +463,7 @@ function openRadioModal(){
   STATIONS.forEach((st, idx) => {
     const o = document.createElement('div');
     o.className = 'opt' + (idx === stIdx ? ' cur' : '');
-    o.innerHTML = `<div class="opt-top"><span>${idx + 1}. ${st.name}</span><span class="opt-dist">${idx === stIdx && radioPlaying ? 'ÇALIYOR' : 'SEÇ'}</span></div><div class="opt-sub">${st.currentTrack || st.genre}</div>`;
+    o.innerHTML = `<div class="opt-top"><span>${idx + 1}. ${st.name}</span><span class="opt-dist">${idx === stIdx && radioPlaying ? 'ÇALIYOR' : 'SEÇ'}</span></div><div class="opt-sub">${st.currentTrack || st.defaultTrack}</div>`;
     o.onclick = () => {
       stIdx = idx;
       closeRadioModal();
@@ -505,87 +475,90 @@ function openRadioModal(){
 }
 function closeRadioModal(){ $('radioModal').classList.remove('open'); }
 
-/* ---------- EN ALT: 60 FPS KATMANLI NEON SES DALGASI EKOLAYZIRI ---------- */
-const waveCv = $('waveCanvas'), wctx = waveCv.getContext('2d');
-let waveRaf = null, smoothEnergy = 0.16, smoothBass = 0.14, smoothMid = 0.14;
+/* ---------- EN ALT: GÖRSELDEKİ GİBİ YATAY NOKTA / ÇUBUK SPEKTRUM EKOLAYZIRI ---------- */
+const eqCv = $('eqCanvas'), ectx = eqCv.getContext('2d');
+let eqRaf = null;
+const EQ_BARS = 88;
+const barLevels = new Float32Array(EQ_BARS);
 
-function waveSize(){
-  waveCv.width = Math.max(1, Math.round(waveCv.clientWidth * DPR));
-  waveCv.height = Math.max(1, Math.round(waveCv.clientHeight * DPR));
+function eqSize(){
+  eqCv.width = Math.max(1, Math.round(eqCv.clientWidth * DPR));
+  eqCv.height = Math.max(1, Math.round(eqCv.clientHeight * DPR));
 }
 
-function renderWaveLoop(ts){
+function renderEqLoop(ts){
   if (document.hidden){
-    waveRaf = null;
+    eqRaf = null;
     return;
   }
-  const w = waveCv.width, h = waveCv.height;
+  const w = eqCv.width, h = eqCv.height;
   if (w && h){
     const dp = DPR;
     const t = (ts || performance.now()) * 0.001;
+    ectx.clearRect(0, 0, w, h);
 
-    let liveEnergy = 0, liveBass = 0, liveMid = 0, hasRealAudio = false;
+    let hasAudio = false;
     if (radioPlaying && analyserNode && freqBuf){
       analyserNode.getByteFrequencyData(freqBuf);
-      let bSum = 0, mSum = 0;
-      for (let i = 0; i < 10; i++) bSum += freqBuf[i];
-      for (let i = 10; i < 32; i++) mSum += freqBuf[i];
-      liveBass = (bSum / (10 * 255));
-      liveMid = (mSum / (22 * 255));
-      liveEnergy = liveBass * 0.65 + liveMid * 0.35;
-      hasRealAudio = liveEnergy > 0.015;
+      for (let i = 0; i < EQ_BARS; i++){
+        if (freqBuf[i % freqBuf.length] > 6){ hasAudio = true; break; }
+      }
     }
 
-    const idleBreath = 0.14 + 0.04 * Math.sin(t * 2.1);
-    const activeSim = 0.46 + 0.26 * Math.sin(t * 5.2) * Math.cos(t * 2.7) + 0.15 * Math.sin(t * 9.4);
-    const targetE = hasRealAudio ? Math.min(1, liveEnergy * 1.45) : (radioPlaying ? Math.max(0.24, activeSim) : idleBreath);
-    const targetB = hasRealAudio ? Math.min(1, liveBass * 1.5) : targetE * 1.08;
-    const targetM = hasRealAudio ? Math.min(1, liveMid * 1.45) : targetE * 0.85;
+    const baseLineY = h * 0.48;
+    const maxUp = h * 0.40;
+    const cellW = w / EQ_BARS;
+    const barW = Math.max(1.4 * dp, cellW * 0.42);
+    const dotSize = Math.max(1.5 * dp, barW);
 
-    smoothEnergy += (targetE - smoothEnergy) * 0.18;
-    smoothBass   += (targetB - smoothBass) * 0.20;
-    smoothMid    += (targetM - smoothMid) * 0.18;
+    for (let i = 0; i < EQ_BARS; i++){
+      const nx = (i / (EQ_BARS - 1)) * 2 - 1;
+      const env = 0.55 + 0.45 * Math.cos(nx * Math.PI * 0.5);
 
-    wctx.clearRect(0, 0, w, h);
-    const midY = h * 0.54;
-    const maxAmp = h * 0.42;
-    const step = Math.max(2, Math.round(2 * dp));
-
-    const layers = [
-      { freq: 11.5, speed: -3.2, phase: 0.0,  ampMul: 0.62 * smoothMid,    sigma: 0.22, color: 'rgba(14, 116, 224, 0.38)', glow: 'rgba(37, 150, 255, 0.55)', blur: 10, lw: 2.2 },
-      { freq: 17.0, speed:  4.4, phase: 1.7,  ampMul: 0.82 * smoothBass,   sigma: 0.15, color: 'rgba(56, 189, 248, 0.72)', glow: 'rgba(56, 189, 248, 0.85)', blur: 8,  lw: 1.7 },
-      { freq: 23.0, speed: -5.8, phase: 3.1,  ampMul: 1.00 * smoothEnergy, sigma: 0.095,color: 'rgba(224, 247, 255, 0.96)', glow: 'rgba(125, 211, 252, 0.95)', blur: 6,  lw: 1.35 }
-    ];
-
-    wctx.lineCap = 'round';
-    wctx.lineJoin = 'round';
-
-    for (const ly of layers){
-      wctx.save();
-      wctx.strokeStyle = ly.color;
-      wctx.shadowColor = ly.glow;
-      wctx.shadowBlur = ly.blur * dp;
-      wctx.lineWidth = ly.lw * dp;
-      wctx.beginPath();
-
-      for (let x = 0; x <= w; x += step){
-        const nx = (x / w) * 2 - 1;
-        const env = Math.exp(-(nx * nx) / (2 * ly.sigma * ly.sigma));
-        const carrier = Math.sin(nx * ly.freq + t * ly.speed + ly.phase);
-        const mod = 0.78 + 0.22 * Math.cos(nx * (ly.freq * 0.52) - t * (ly.speed * 0.7));
-        const edgeRipple = Math.sin(nx * 28 + t * ly.speed * 0.6) * (0.045 * smoothEnergy);
-        const y = midY - (carrier * mod * env * ly.ampMul + edgeRipple) * maxAmp;
-        if (x === 0) wctx.moveTo(x, y); else wctx.lineTo(x, y);
+      let targetH = 0;
+      if (hasAudio){
+        const binIdx = Math.min(freqBuf.length - 1, Math.floor((i / EQ_BARS) * (freqBuf.length * 0.72)));
+        targetH = (freqBuf[binIdx] / 255) * maxUp * env;
+      } else if (radioPlaying){
+        const w1 = 0.5 + 0.5 * Math.sin(i * 0.42 - t * 6.5);
+        const w2 = 0.5 + 0.5 * Math.cos(i * 0.19 + t * 3.8);
+        const beat = 0.45 + 0.55 * Math.pow(0.5 + 0.5 * Math.sin(t * 7.4), 2);
+        targetH = (0.12 + 0.88 * w1 * w2 * beat) * maxUp * env;
+      } else {
+        /* Görseldeki gibi sakin, kibar ritim nefeslenmesi */
+        const calm = 0.5 + 0.5 * Math.sin(i * 0.26 + t * 1.4);
+        targetH = (0.04 + 0.14 * calm) * maxUp * env;
       }
-      wctx.stroke();
-      wctx.restore();
+
+      barLevels[i] += (targetH - barLevels[i]) * (radioPlaying ? 0.26 : 0.12);
+      const val = Math.max(0, barLevels[i]);
+      const cx = (i + 0.5) * cellW;
+
+      /* Her zaman görseldeki gibi üst hizada ince nokta/çentik */
+      const topDotY = baseLineY - maxUp * 0.82;
+      const dotAlpha = radioPlaying ? (0.35 + 0.45 * (val / Math.max(1, maxUp))) : 0.24;
+      ectx.fillStyle = `rgba(215, 238, 255, ${dotAlpha.toFixed(3)})`;
+      ectx.fillRect(cx - dotSize * 0.5, topDotY - dotSize * 0.5, dotSize, dotSize);
+
+      /* Ekolayzır dikey çubuğu */
+      if (val > 0.6 * dp){
+        const barH = Math.min(maxUp, val);
+        const alpha = Math.min(0.95, 0.28 + (barH / maxUp) * 0.67);
+        ectx.fillStyle = `rgba(186, 232, 255, ${alpha.toFixed(3)})`;
+        ectx.fillRect(cx - barW * 0.5, baseLineY - barH * 0.35, barW, barH);
+      }
+
+      /* Alt kibar nokta çizgisi */
+      const botDotY = baseLineY + maxUp * 0.72;
+      ectx.fillStyle = radioPlaying ? 'rgba(147, 221, 255, 0.36)' : 'rgba(147, 221, 255, 0.16)';
+      ectx.fillRect(cx - dotSize * 0.45, botDotY - dotSize * 0.45, dotSize * 0.9, dotSize * 0.9);
     }
   }
-  waveRaf = requestAnimationFrame(renderWaveLoop);
+  eqRaf = requestAnimationFrame(renderEqLoop);
 }
 
-function startWaveAnim(){
-  if (!waveRaf) waveRaf = requestAnimationFrame(renderWaveLoop);
+function startEqAnim(){
+  if (!eqRaf) eqRaf = requestAnimationFrame(renderEqLoop);
 }
 
 /* ---------- ÜST PUSULA ŞERİDİ (GÖRSELDEKİ DÜZEN, BAR YOK, İNCE & KİBAR) ---------- */
@@ -763,7 +736,7 @@ function roadSize(){
   fadeCache.w = 0;
   drawRoadMap();
   compassSize();
-  waveSize();
+  eqSize();
 }
 
 function kickRoadAnim(){ if (!roadAnimRaf) roadAnimRaf = requestAnimationFrame(stepRoadAnim); }
@@ -1889,11 +1862,11 @@ if (typeof ResizeObserver !== 'undefined'){
   ro.observe(roadCv);
 }
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden){ lastStepTs = 0; kickRoadAnim(); drawRoadMap(); drawTopCompass(); startWaveAnim(); }
+  if (!document.hidden){ lastStepTs = 0; kickRoadAnim(); drawRoadMap(); drawTopCompass(); startEqAnim(); }
 });
 
 applyLayout();
-startWaveAnim();
+startEqAnim();
 startGps();
 </script>
 </body>
