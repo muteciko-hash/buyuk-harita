@@ -53,15 +53,51 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 }
 .compass-cv{width:100%;height:100%;display:block}
 
-/* SOL ÜST: AKILLI EĞİM GÖSTERGESİ (PUSULANIN ALTINDA) */
+/* SOL ÜST: SAAT, TARİH, HAVA DURUMU & SÜRÜŞ/SİSTEM BİLGİLERİ */
 .top-left-hud{
   position:absolute;left:var(--px);top:calc(var(--compass-top) + var(--compass-h) + clamp(8px,calc(1.4*var(--vh)),16px));
-  z-index:6;display:flex;flex-direction:column;align-items:flex-start;gap:clamp(6px,calc(1.2*var(--vh)),12px);
+  z-index:6;display:flex;flex-direction:column;align-items:flex-start;gap:clamp(6px,calc(1.1*var(--vh)),11px);
   pointer-events:none
+}
+.clock-block{display:flex;flex-direction:column;align-items:flex-start;gap:2px}
+.clock-time{
+  font-size:clamp(22px,calc(4.1*var(--vh)),34px);font-weight:500;letter-spacing:.04em;
+  line-height:1.05;color:#ffffff;font-variant-numeric:tabular-nums;
+  text-shadow:0 0 18px rgba(186,232,255,.38)
+}
+.clock-date{
+  font-size:clamp(9.5px,calc(1.5*var(--vh)),12px);font-weight:600;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--ice-sub);
+  text-shadow:0 0 10px rgba(148,210,255,.22)
+}
+.wx-block{
+  display:flex;align-items:center;gap:7px;
+  padding-top:2px;color:var(--ice-bright)
+}
+.wx-ico{
+  width:clamp(16px,calc(2.6*var(--vh)),22px);height:clamp(16px,calc(2.6*var(--vh)),22px);
+  color:var(--ice);display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  filter:drop-shadow(0 0 8px rgba(147,221,255,.35))
+}
+.wx-ico svg{width:100%;height:100%}
+.wx-temp{
+  font-size:clamp(14px,calc(2.4*var(--vh)),19px);font-weight:600;letter-spacing:.04em;
+  color:#ffffff;font-variant-numeric:tabular-nums
+}
+.wx-meta{
+  font-size:clamp(8.5px,calc(1.35*var(--vh)),10.5px);font-weight:500;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ice-dim);white-space:nowrap
+}
+.meta-row{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap
+}
+.telemetry-line{
+  font-size:clamp(9px,calc(1.4*var(--vh)),11px);font-weight:600;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ice-dim);font-variant-numeric:tabular-nums;white-space:nowrap
 }
 .grade-pill{
   display:none;align-items:center;gap:5px;
-  padding:4px 10px;border-radius:8px;
+  padding:3px 9px;border-radius:8px;
   background:rgba(4,9,18,.52);
   font-size:clamp(10px,calc(1.7*var(--vh)),13px);font-weight:600;letter-spacing:.14em;
   color:var(--ice);font-variant-numeric:tabular-nums
@@ -173,10 +209,24 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
     <canvas class="compass-cv" id="compassCanvas"></canvas>
   </div>
 
-  <!-- SOL ÜST: AKILLI EĞİM -->
+  <!-- SOL ÜST: SAAT, TARİH, HAVA DURUMU & SÜRÜŞ/SİSTEM BİLGİLERİ -->
   <div class="top-left-hud">
-    <div class="grade-pill" id="gradePill">
-      <span id="gradeText">%0</span>
+    <div class="clock-block">
+      <div class="clock-time" id="clockTime">--:--</div>
+      <div class="clock-date" id="clockDate">-- --- ---</div>
+    </div>
+
+    <div class="wx-block" id="wxBlock">
+      <div class="wx-ico" id="wxIcon"></div>
+      <span class="wx-temp" id="wxTemp">--°</span>
+      <span class="wx-meta" id="wxMeta">HAVA</span>
+    </div>
+
+    <div class="meta-row">
+      <div class="grade-pill" id="gradePill">
+        <span id="gradeText">%0</span>
+      </div>
+      <span class="telemetry-line" id="telemetryLine">0 KM/SA</span>
     </div>
   </div>
 
@@ -188,7 +238,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
     </div>
   </div>
 
-  <!-- ÜST ORTA: YAKLAŞAN HAVA / YOL UYARISI -->
+  <!-- ÜST ORTA: YAKLAŞAN HAVA / YOL UYARISI (PUSULANIN ALTINDA) -->
   <div class="ahead-chip" id="aheadChip">
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffb000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 22 20H2z"/><path d="M12 10v4.5M12 17.5v.1"/></svg>
     <span id="aheadText"></span>
@@ -247,6 +297,78 @@ function toast(t){
   toast.t = setTimeout(() => el.classList.remove('on'), 1600);
 }
 
+/* ---------- SOL SÜTUN: SAAT, TARİH, HAVA DURUMU & SÜRÜŞ/SİSTEM BİLGİLERİ ---------- */
+const MONTHS_TR = ['OCA', 'ŞUB', 'MAR', 'NİS', 'MAY', 'HAZ', 'TEM', 'AĞU', 'EYL', 'EKİ', 'KAS', 'ARA'];
+const DAYS_TR   = ['PAZ', 'PZT', 'SAL', 'ÇAR', 'PER', 'CUM', 'CMT'];
+
+function updateClock(){
+  const now = new Date();
+  $('clockTime').textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  $('clockDate').textContent = `${pad(now.getDate())} ${MONTHS_TR[now.getMonth()]} ${DAYS_TR[now.getDay()]}`;
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+const WX_SVGS = {
+  sun:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6"/></svg>',
+  cloud: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 18.5H7.5a4.5 4.5 0 0 1-.6-8.9A5.5 5.5 0 0 1 17.4 8a3.8 3.8 0 0 1 .1 10.5z"/></svg>',
+  rain:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 15.5H7.5a4.5 4.5 0 0 1-.6-8.9A5.5 5.5 0 0 1 17.4 5a3.8 3.8 0 0 1 .1 10.5z"/><path d="M8.5 18.5l-1 2.5M12.5 18.5l-1 2.5M16.5 18.5l-1 2.5"/></svg>',
+  snow:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v18M5.5 7.5l13 9M18.5 7.5l-13 9"/></svg>',
+  fog:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9h16M6 13h12M4 17h16"/></svg>',
+  storm: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 15.5H7.5a4.5 4.5 0 0 1-.6-8.9A5.5 5.5 0 0 1 17.4 5a3.8 3.8 0 0 1 .1 10.5z"/><polyline points="13 13 10.5 17.5 13.5 17.5 11 22"/></svg>'
+};
+$('wxIcon').innerHTML = WX_SVGS.cloud;
+
+function parseWeatherInfo(c){
+  const code = c.weather_code;
+  const wind = Math.round(c.wind_speed_10m || 0);
+  if ([95,96,99].includes(code)) return { ico: 'storm', lbl: `FIRTINA · ${wind} KM/SA` };
+  if ([71,73,75,77,85,86].includes(code)) return { ico: 'snow', lbl: `KAR · ${wind} KM/SA` };
+  if ([51,53,55,56,57,61,63,65,66,67,80,81,82].includes(code)) return { ico: 'rain', lbl: `YAĞIŞ · ${wind} KM/SA` };
+  if ([45,48].includes(code)) return { ico: 'fog', lbl: `SİS · ${wind} KM/SA` };
+  if ([1,2,3].includes(code)) return { ico: 'cloud', lbl: `BULUTLU · ${wind} KM/SA` };
+  return { ico: 'sun', lbl: `AÇIK · ${wind} KM/SA` };
+}
+
+let lastWxLat = null, lastWxLon = null, lastWxAt = 0, wxBusy = false;
+async function updateLocalWeather(lat, lon, force=false){
+  if (wxBusy || lat == null || lon == null) return;
+  const now = Date.now();
+  const moved = lastWxLat !== null ? distKm(lastWxLat, lastWxLon, lat, lon) : 99;
+  if (!force && lastWxLat !== null && moved < 5 && now - lastWxAt < 10 * 60000) return;
+  wxBusy = true;
+  try{
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}&current=temperature_2m,weather_code,wind_speed_10m&timezone=auto`;
+    const d = await (await fetch(url)).json();
+    const c = d && d.current;
+    if (c && typeof c.temperature_2m === 'number'){
+      const info = parseWeatherInfo(c);
+      $('wxIcon').innerHTML = WX_SVGS[info.ico] || WX_SVGS.cloud;
+      $('wxTemp').textContent = `${Math.round(c.temperature_2m)}°`;
+      $('wxMeta').textContent = info.lbl;
+      lastWxLat = lat; lastWxLon = lon; lastWxAt = now;
+    }
+  }catch{}
+  finally{ wxBusy = false; }
+}
+
+let batteryPct = null;
+function renderTelemetry(){
+  const kmh = Math.max(0, Math.round((fixSpeed || 0) * 3.6));
+  const parts = [`${kmh} KM/SA`];
+  if (batteryPct != null) parts.push(`%${batteryPct}`);
+  $('telemetryLine').textContent = parts.join(' · ');
+}
+renderTelemetry();
+
+if (navigator.getBattery){
+  navigator.getBattery().then(b => {
+    const syncB = () => { batteryPct = Math.round(b.level * 100); renderTelemetry(); };
+    syncB();
+    b.addEventListener('levelchange', syncB);
+  }).catch(() => {});
+}
+
 /* ---------- ÜST PUSULA ŞERİDİ (GÖRSELDEKİ DÜZEN, BAR YOK, İNCE & KİBAR) ---------- */
 const compCv = $('compassCanvas'), cctx = compCv.getContext('2d');
 const CARDINAL_MAP = { 0: 'N', 90: 'E', 180: 'S', 270: 'W' };
@@ -290,7 +412,6 @@ function drawTopCompass(){
     const is15 = norm % 15 === 0;
     const isCenter = Math.abs(d - centerDeg) < 2.6;
 
-    /* Üst satır: N, E, S, W veya merkezde kırmızı açı/0 halkası */
     if (isCenter){
       cctx.font = `700 ${topFontPx}px 'Montserrat', sans-serif`;
       cctx.textBaseline = 'top';
@@ -303,7 +424,6 @@ function drawTopCompass(){
       cctx.fillText(CARDINAL_MAP[norm], x, 0.5 * dp);
     }
 
-    /* Orta çentikler: ince beyaz ve ana yönlerde kırmızı */
     const tTop = (isCard || is15) ? tickTopBase : tickTopBase + 1.8 * dp;
     const tBot = (isCard || is15) ? tickBotBase : tickBotBase - 1.2 * dp;
     cctx.strokeStyle = isCard
@@ -315,7 +435,6 @@ function drawTopCompass(){
     cctx.lineTo(x, tBot);
     cctx.stroke();
 
-    /* Alt satır: fotoğraftaki gibi derece ve ara yön etiketleri */
     cctx.font = `600 ${botFontPx}px 'Montserrat', sans-serif`;
     cctx.textBaseline = 'bottom';
     if (isCenter){
@@ -333,7 +452,6 @@ function drawTopCompass(){
     }
   }
 
-  /* Merkezdeki kırmızı gösterge çizgisi */
   cctx.strokeStyle = '#ff3b3b';
   cctx.lineWidth = 1.5 * dp;
   cctx.beginPath();
@@ -1474,6 +1592,7 @@ function updateGeo(c){
   fixHead = (c.speed > 1.5 && c.heading != null && isFinite(c.heading)) ? c.heading : targetHeading;
   fixLat = c.latitude; fixLon = c.longitude; fixTime = Date.now();
 
+  renderTelemetry();
   if (autoZoom) targetZoomMeters = computeAutoZoomMeters(fixSpeed, lastDistToTurn);
   updateSlope(c.latitude, c.longitude, c.altitude);
   if (fixSpeed >= 5) checkAhead();
@@ -1482,6 +1601,7 @@ function updateGeo(c){
   targetLon = c.longitude;
   fetchRoadNetwork(targetLat, targetLon, false);
   updatePlaceSignature(c.latitude, c.longitude, false);
+  updateLocalWeather(c.latitude, c.longitude, false);
   kickRoadAnim();
 }
 
@@ -1503,18 +1623,20 @@ async function ipFallback(){
     if (d && d.latitude){
       targetLat = renderLat = d.latitude;
       targetLon = renderLon = d.longitude;
-      $('sigCity').textContent = (d.city || 'MUĞLA').toUpperCase();
+      $('sigCity').textContent = (d.city || 'FETHİYE').toUpperCase();
       $('sigSub').textContent = (d.country || 'TÜRKİYE').toUpperCase();
       fetchRoadNetwork(targetLat, targetLon, true);
+      updateLocalWeather(targetLat, targetLon, true);
       drawRoadMap();
       drawTopCompass();
       return;
     }
   }catch{}
-  targetLat = renderLat = 37.2153; targetLon = renderLon = 28.3636;
-  $('sigCity').textContent = 'MUĞLA';
-  $('sigSub').textContent = 'TÜRKİYE';
+  targetLat = renderLat = 36.6592; targetLon = renderLon = 29.1269;
+  $('sigCity').textContent = 'FETHİYE';
+  $('sigSub').textContent = 'MUĞLA · TÜRKİYE';
   fetchRoadNetwork(targetLat, targetLon, true);
+  updateLocalWeather(targetLat, targetLon, true);
   drawRoadMap();
   drawTopCompass();
 }
@@ -1557,7 +1679,7 @@ if (typeof ResizeObserver !== 'undefined'){
   ro.observe(roadCv);
 }
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden){ lastStepTs = 0; kickRoadAnim(); drawRoadMap(); drawTopCompass(); }
+  if (!document.hidden){ lastStepTs = 0; kickRoadAnim(); drawRoadMap(); drawTopCompass(); updateClock(); }
 });
 
 applyLayout();
