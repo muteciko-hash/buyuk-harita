@@ -18,7 +18,8 @@
   --vh:1vh;--vw:1vw;
   --px:max(env(safe-area-inset-left),clamp(20px,calc(3.2*var(--vw)),44px));
   --py:max(env(safe-area-inset-top),clamp(14px,calc(2.6*var(--vh)),28px));
-  --compass-h:clamp(30px,calc(5.2*var(--vh)),42px);
+  --compass-top:max(env(safe-area-inset-top),2px);
+  --compass-h:clamp(24px,calc(4.1*var(--vh)),34px);
   --bg:#000000;
   --card:#11161f;
   --line:rgba(148,197,232,.14);
@@ -27,7 +28,6 @@
   --ice-sub:rgba(224,244,255,.86);
   --ice-dim:rgba(176,216,245,.62);
   --amber:#ffb000;
-  --compass-red:#ef4444;
 }
 *{box-sizing:border-box;margin:0;padding:0;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
 html,body{
@@ -44,41 +44,21 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .map-stage{position:absolute;inset:0;width:100%;height:100%;z-index:1;cursor:pointer}
 .road-cv{position:absolute;inset:0;width:100%;height:100%;display:block}
 
-/* EN ÜST: ŞEFFAF, KENARDAN KENARA KİBAR PUSULA ŞERİDİ */
+/* EN ÜST: BAR OLMADAN, KENARDAN KENARA İNCE VE KİBAR PUSULA ŞERİDİ */
 .top-compass{
-  position:absolute;left:0;right:0;top:max(env(safe-area-inset-top),4px);
+  position:absolute;left:0;right:0;top:var(--compass-top);
   height:var(--compass-h);z-index:7;pointer-events:none;
-  -webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 7%,#000 93%,transparent 100%);
-  mask-image:linear-gradient(90deg,transparent 0%,#000 7%,#000 93%,transparent 100%)
+  -webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 5%,#000 95%,transparent 100%);
+  mask-image:linear-gradient(90deg,transparent 0%,#000 5%,#000 95%,transparent 100%)
 }
 .compass-cv{width:100%;height:100%;display:block}
 
-/* SOL ÜST: DÖNÜŞ OKU & AKILLI EĞİM GÖSTERGESİ */
+/* SOL ÜST: AKILLI EĞİM GÖSTERGESİ (PUSULANIN ALTINDA) */
 .top-left-hud{
-  position:absolute;left:var(--px);top:calc(var(--py) + var(--compass-h));z-index:6;
-  display:flex;flex-direction:column;align-items:flex-start;gap:clamp(6px,calc(1.2*var(--vh)),12px);
+  position:absolute;left:var(--px);top:calc(var(--compass-top) + var(--compass-h) + clamp(8px,calc(1.4*var(--vh)),16px));
+  z-index:6;display:flex;flex-direction:column;align-items:flex-start;gap:clamp(6px,calc(1.2*var(--vh)),12px);
   pointer-events:none
 }
-.nav-hud{
-  display:none;align-items:center;gap:clamp(10px,calc(1.5*var(--vw)),16px);
-  padding:6px 14px 6px 6px;border-radius:12px;
-  background:rgba(4,9,18,.52);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
-  pointer-events:auto;cursor:pointer;transition:opacity .25s,transform .15s
-}
-.nav-hud:active{transform:scale(.95)}
-.nav-hud.on{display:inline-flex}
-.nav-ico{
-  width:clamp(26px,calc(5.2*var(--vh)),38px);height:clamp(26px,calc(5.2*var(--vh)),38px);
-  color:var(--ice-bright);display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  filter:drop-shadow(0 0 10px rgba(125,211,252,.55))
-}
-.nav-ico svg{width:100%;height:100%}
-.nav-dist{
-  font-size:clamp(16px,calc(3.1*var(--vh)),24px);font-weight:600;letter-spacing:.08em;
-  color:var(--ice-bright);font-variant-numeric:tabular-nums;white-space:nowrap;
-  text-shadow:0 0 14px rgba(125,211,252,.35)
-}
-
 .grade-pill{
   display:none;align-items:center;gap:5px;
   padding:4px 10px;border-radius:8px;
@@ -88,9 +68,35 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 }
 .grade-pill.on{display:inline-flex}
 
-/* ÜST ORTA: YAKLAŞAN HAVA / YOL UYARISI */
+/* SAĞ ÜST (PUSULANIN ALTINDA): YÖNLENDİRME OKU & MESAFE */
+.top-right-hud{
+  position:absolute;right:var(--px);top:calc(var(--compass-top) + var(--compass-h) + clamp(8px,calc(1.4*var(--vh)),16px));
+  z-index:6;display:flex;flex-direction:column;align-items:flex-end;pointer-events:none
+}
+.nav-hud{
+  display:none;align-items:center;gap:clamp(8px,calc(1.3*var(--vw)),14px);
+  padding:5px 12px 5px 8px;border-radius:12px;
+  background:rgba(4,9,18,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  pointer-events:auto;cursor:pointer;transition:opacity .25s,transform .15s
+}
+.nav-hud:active{transform:scale(.95)}
+.nav-hud.on{display:inline-flex}
+.nav-ico{
+  width:clamp(22px,calc(4.2*var(--vh)),32px);height:clamp(22px,calc(4.2*var(--vh)),32px);
+  color:var(--ice-bright);display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  filter:drop-shadow(0 0 10px rgba(125,211,252,.55))
+}
+.nav-ico svg{width:100%;height:100%}
+.nav-dist{
+  font-size:clamp(14px,calc(2.6*var(--vh)),20px);font-weight:600;letter-spacing:.08em;
+  color:var(--ice-bright);font-variant-numeric:tabular-nums;white-space:nowrap;
+  text-shadow:0 0 14px rgba(125,211,252,.35)
+}
+
+/* ÜST ORTA: YAKLAŞAN HAVA / YOL UYARISI (PUSULANIN ALTINDA) */
 .ahead-chip{
-  position:absolute;left:50%;top:calc(var(--py) + var(--compass-h));transform:translateX(-50%) translateY(-6px);z-index:6;
+  position:absolute;left:50%;top:calc(var(--compass-top) + var(--compass-h) + clamp(8px,calc(1.4*var(--vh)),16px));
+  transform:translateX(-50%) translateY(-6px);z-index:6;
   display:flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;
   background:rgba(5,10,18,.68);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
   border:1px solid rgba(255,176,0,.48);color:#ffd275;
@@ -98,18 +104,6 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
   white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .5s,transform .5s
 }
 .ahead-chip.on{opacity:1;transform:translateX(-50%) translateY(0)}
-
-/* SAĞ ÜST: GİZLİ YÖN MODU DOKUNMA BÖLGESİ (Sürüş Yönü / Kuzey Yukarı) */
-.orient-zone{
-  position:absolute;right:0;top:var(--compass-h);width:clamp(96px,calc(16*var(--vw)),170px);height:clamp(74px,calc(16*var(--vh)),120px);
-  z-index:6;display:flex;align-items:flex-start;justify-content:flex-end;
-  padding:calc(var(--py) * .6) var(--px) 0 0;cursor:pointer
-}
-.orient-badge{
-  font-size:clamp(8px,calc(1.25*var(--vh)),10px);font-weight:600;letter-spacing:.2em;text-transform:uppercase;
-  color:var(--ice-dim);opacity:.65;transition:opacity .25s,color .25s
-}
-.orient-zone:active .orient-badge{opacity:1;color:var(--ice-bright)}
 
 /* ALT ORTA: PARLAK ŞEHİR İMZASI + ROTA ÖZETİ (KOORDİNAT VE ALT GRAFİK YOK) */
 .sig-wrap{
@@ -179,14 +173,18 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
     <canvas class="compass-cv" id="compassCanvas"></canvas>
   </div>
 
-  <!-- SOL ÜST: DÖNÜŞ OKU + METRE & AKILLI EĞİM -->
+  <!-- SOL ÜST: AKILLI EĞİM -->
   <div class="top-left-hud">
+    <div class="grade-pill" id="gradePill">
+      <span id="gradeText">%0</span>
+    </div>
+  </div>
+
+  <!-- SAĞ ÜST (PUSULANIN ALTINDA): YÖNLENDİRME OKU & MESAFE -->
+  <div class="top-right-hud">
     <div class="nav-hud" id="navHud" onclick="cancelNav(true)">
       <div class="nav-ico" id="navIcon"></div>
       <span class="nav-dist" id="navTurnDist">--</span>
-    </div>
-    <div class="grade-pill" id="gradePill">
-      <span id="gradeText">%0</span>
     </div>
   </div>
 
@@ -194,11 +192,6 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
   <div class="ahead-chip" id="aheadChip">
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffb000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 22 20H2z"/><path d="M12 10v4.5M12 17.5v.1"/></svg>
     <span id="aheadText"></span>
-  </div>
-
-  <!-- SAĞ ÜST: YÖN MODU (SÜRÜŞ YÖNÜ / KUZEY YUKARI) -->
-  <div class="orient-zone" onclick="toggleNorthUp()">
-    <span class="orient-badge" id="orientBadge">SÜRÜŞ</span>
   </div>
 
   <!-- ALT ORTA: ŞEHİR İMZASI + ROTA ÖZETİ -->
@@ -254,12 +247,10 @@ function toast(t){
   toast.t = setTimeout(() => el.classList.remove('on'), 1600);
 }
 
-/* ---------- ÜST PUSULA ŞERİDİ (BAR YOK, KIRMIZI HARFLER & İNCE ÇİZGİLER) ---------- */
+/* ---------- ÜST PUSULA ŞERİDİ (GÖRSELDEKİ DÜZEN, BAR YOK, İNCE & KİBAR) ---------- */
 const compCv = $('compassCanvas'), cctx = compCv.getContext('2d');
-const COMPASS_LABELS = {
-  0: 'N', 45: 'NE', 90: 'E', 135: 'SE',
-  180: 'S', 225: 'SW', 270: 'W', 315: 'NW'
-};
+const CARDINAL_MAP = { 0: 'N', 90: 'E', 180: 'S', 270: 'W' };
+const INTER_MAP = { 45: 'NE', 135: 'SE', 225: 'SW', 315: 'NW' };
 let smoothCompassHead = 0;
 
 function compassSize(){
@@ -275,59 +266,79 @@ function drawTopCompass(){
   cctx.clearRect(0, 0, w, h);
 
   const cx = w * 0.5;
-  const pxPerDeg = Math.max(2.6 * dp, w / 220);
-  const halfSpanDeg = Math.ceil((w * 0.5) / pxPerDeg) + 10;
+  const pxPerDeg = Math.max(3.1 * dp, w / 195);
+  const halfSpanDeg = Math.ceil((w * 0.5) / pxPerDeg) + 12;
   const centerDeg = smoothCompassHead;
   const startDeg = Math.floor((centerDeg - halfSpanDeg) / 5) * 5;
   const endDeg = Math.ceil((centerDeg + halfSpanDeg) / 5) * 5;
 
+  const topFontPx = Math.max(8.5 * dp, h * 0.34);
+  const botFontPx = Math.max(6.8 * dp, h * 0.25);
+  const tickTopBase = topFontPx + 2.5 * dp;
+  const tickBotBase = h - botFontPx - 2.2 * dp;
+
   cctx.lineCap = 'round';
   cctx.textAlign = 'center';
-  cctx.textBaseline = 'top';
 
   for (let d = startDeg; d <= endDeg; d += 5){
     const norm = ((d % 360) + 360) % 360;
     const x = cx + (d - centerDeg) * pxPerDeg;
-    if (x < -20 * dp || x > w + 20 * dp) continue;
+    if (x < -28 * dp || x > w + 28 * dp) continue;
 
-    const isCardinal = norm % 90 === 0;
-    const isInter = !isCardinal && norm % 45 === 0;
-    const isMajor = norm % 15 === 0;
+    const isCard = norm in CARDINAL_MAP;
+    const isInter = norm in INTER_MAP;
+    const is15 = norm % 15 === 0;
+    const isCenter = Math.abs(d - centerDeg) < 2.6;
 
-    if (isCardinal || isInter){
-      /* Kırmızı yön harfi (N, NE, E, SE, S, SW, W, NW) */
-      const lbl = COMPASS_LABELS[norm];
-      const fSize = (isCardinal ? 11.5 : 9.5) * dp;
-      cctx.font = `${isCardinal ? 700 : 600} ${fSize}px 'Montserrat', sans-serif`;
-      cctx.fillStyle = isCardinal ? '#ff4d4d' : 'rgba(255, 88, 88, 0.85)';
-      cctx.fillText(lbl, x, 3 * dp);
+    /* Üst satır: N, E, S, W veya merkezde kırmızı açı/0 halkası */
+    if (isCenter){
+      cctx.font = `700 ${topFontPx}px 'Montserrat', sans-serif`;
+      cctx.textBaseline = 'top';
+      cctx.fillStyle = '#ff5252';
+      cctx.fillText('0', x, 0.5 * dp);
+    } else if (isCard){
+      cctx.font = `700 ${topFontPx}px 'Montserrat', sans-serif`;
+      cctx.textBaseline = 'top';
+      cctx.fillStyle = '#f87171';
+      cctx.fillText(CARDINAL_MAP[norm], x, 0.5 * dp);
+    }
 
-      /* Harfin altında kibar küçük çentik */
-      cctx.strokeStyle = 'rgba(255, 88, 88, 0.55)';
-      cctx.lineWidth = 1.2 * dp;
-      cctx.beginPath();
-      cctx.moveTo(x, h - 7 * dp);
-      cctx.lineTo(x, h - 3 * dp);
-      cctx.stroke();
-    } else {
-      /* İnce, kibar dikey cetvel çizgileri */
-      const tickTop = isMajor ? 6 * dp : 9 * dp;
-      const tickBot = h - 4 * dp;
-      cctx.strokeStyle = isMajor ? 'rgba(220, 242, 255, 0.52)' : 'rgba(186, 226, 248, 0.28)';
-      cctx.lineWidth = (isMajor ? 1.2 : 0.9) * dp;
-      cctx.beginPath();
-      cctx.moveTo(x, tickTop);
-      cctx.lineTo(x, tickBot);
-      cctx.stroke();
+    /* Orta çentikler: ince beyaz ve ana yönlerde kırmızı */
+    const tTop = (isCard || is15) ? tickTopBase : tickTopBase + 1.8 * dp;
+    const tBot = (isCard || is15) ? tickBotBase : tickBotBase - 1.2 * dp;
+    cctx.strokeStyle = isCard
+      ? 'rgba(255, 105, 105, 0.85)'
+      : (is15 ? 'rgba(235, 246, 255, 0.58)' : 'rgba(210, 234, 252, 0.30)');
+    cctx.lineWidth = (isCard ? 1.25 : (is15 ? 1.05 : 0.85)) * dp;
+    cctx.beginPath();
+    cctx.moveTo(x, tTop);
+    cctx.lineTo(x, tBot);
+    cctx.stroke();
+
+    /* Alt satır: fotoğraftaki gibi derece ve ara yön etiketleri */
+    cctx.font = `600 ${botFontPx}px 'Montserrat', sans-serif`;
+    cctx.textBaseline = 'bottom';
+    if (isCenter){
+      cctx.fillStyle = '#ff6b6b';
+      cctx.fillText(`${Math.round(((centerDeg % 360) + 360) % 360)}°`, x, h - 0.5 * dp);
+    } else if (isCard){
+      cctx.fillStyle = 'rgba(255, 120, 120, 0.92)';
+      cctx.fillText(`${norm}°`, x, h - 0.5 * dp);
+    } else if (isInter){
+      cctx.fillStyle = 'rgba(255, 120, 120, 0.88)';
+      cctx.fillText(INTER_MAP[norm], x, h - 0.5 * dp);
+    } else if (norm % 30 === 0){
+      cctx.fillStyle = 'rgba(255, 120, 120, 0.78)';
+      cctx.fillText(`${norm}°`, x, h - 0.5 * dp);
     }
   }
 
-  /* Merkezdeki sabit kırmızı gösterge çizgisi + mevcut derece */
+  /* Merkezdeki kırmızı gösterge çizgisi */
   cctx.strokeStyle = '#ff3b3b';
-  cctx.lineWidth = 1.8 * dp;
+  cctx.lineWidth = 1.5 * dp;
   cctx.beginPath();
-  cctx.moveTo(cx, 1.5 * dp);
-  cctx.lineTo(cx, h - 1.5 * dp);
+  cctx.moveTo(cx, 1 * dp);
+  cctx.lineTo(cx, h - 1 * dp);
   cctx.stroke();
 }
 
@@ -344,7 +355,6 @@ let autoZoom = true;
 let manualZoomIdx = 1;
 let targetZoomMeters = 350;
 let renderZoomMeters = 350;
-let northUp = false;
 
 function computeAutoZoomMeters(speedMs, distToNextTurn){
   const kmh = (speedMs || 0) * 3.6;
@@ -353,13 +363,6 @@ function computeAutoZoomMeters(speedMs, distToNextTurn){
   if (kmh < 65) return 550;
   if (kmh < 88) return 1400;
   return 2600;
-}
-
-function toggleNorthUp(){
-  northUp = !northUp;
-  $('orientBadge').textContent = northUp ? 'KUZEY' : 'SÜRÜŞ';
-  toast(northUp ? 'Kuzey yukarıda' : 'Sürüş yönü yukarıda');
-  kickRoadAnim();
 }
 
 /* ---------- AKILLI RAMPA / EĞİM HESAPLAYICI ---------- */
@@ -394,7 +397,7 @@ function renderSlopeBadge(){
   }
 }
 
-/* ---------- HARİTA MOTORU (GECE MAVİSİ & OLED SİYAH) ---------- */
+/* ---------- HARİTA MOTORU (SÜRÜŞ YÖNÜ YUKARIDA · GECE MAVİSİ & OLED SİYAH) ---------- */
 const roadCv = $('roadCanvas'), rctx = roadCv.getContext('2d');
 const DPR = Math.min(3, window.devicePixelRatio || 1);
 const OVERPASS = [
@@ -437,9 +440,8 @@ function stepRoadAnim(ts){
     tl = fixLat + fixSpeed * a * Math.cos(hr) / M_LAT;
     tn = fixLon + fixSpeed * a * Math.sin(hr) / (111320 * Math.cos(tl * Math.PI / 180));
   }
-  const desiredHead = northUp ? 0 : targetHeading;
   if (renderLat === null){
-    renderLat = tl; renderLon = tn; renderHeading = desiredHead;
+    renderLat = tl; renderLon = tn; renderHeading = targetHeading;
     smoothCompassHead = targetHeading;
     renderZoomMeters = targetZoomMeters;
     lastStepTs = ts || 0;
@@ -455,13 +457,13 @@ function stepRoadAnim(ts){
   const kz = 1 - Math.exp(-dt * 3.2);
 
   const dLat = tl - renderLat, dLon = tn - renderLon;
-  const dHead = ((desiredHead - renderHeading + 540) % 360) - 180;
+  const dHead = ((targetHeading - renderHeading + 540) % 360) - 180;
   const dComp = ((targetHeading - smoothCompassHead + 540) % 360) - 180;
   const dZoom = targetZoomMeters - renderZoomMeters;
 
   const settled = Math.abs(dLat) < 1e-7 && Math.abs(dLon) < 1e-7 && Math.abs(dHead) < 0.25 && Math.abs(dComp) < 0.25 && Math.abs(dZoom) < 0.5;
   if (settled){
-    renderLat = tl; renderLon = tn; renderHeading = desiredHead;
+    renderLat = tl; renderLon = tn; renderHeading = targetHeading;
     smoothCompassHead = targetHeading;
     renderZoomMeters = targetZoomMeters;
   } else {
@@ -1145,7 +1147,7 @@ function drawRoadMap(){
   rctx.clearRect(0, 0, w, h);
 
   const tx = w * 0.5;
-  const ty = northUp ? h * 0.52 : h * 0.72;
+  const ty = h * 0.72;
 
   /* Merkezde derin gece mavisi atmosfer derinliği */
   const bgGlow = rctx.createRadialGradient(w * 0.5, h * 0.46, 0, w * 0.5, h * 0.48, Math.max(w, h) * 0.56);
@@ -1270,7 +1272,6 @@ function drawRoadMap(){
     rctx.fillStyle = '#38bdf8';
     rctx.beginPath(); rctx.arc(ex, ey, 4 * dp, 0, Math.PI * 2); rctx.fill();
   } else if (matched){
-    /* Rota yokken üzerinde bulunulan yolu ileriye doğru yumuşakça aydınlat */
     const pts = matched.m, seg = bestSeg;
     const a = pts[seg], b = pts[seg+1];
     const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx*dx + dy*dy;
@@ -1339,7 +1340,7 @@ function drawRoadMap(){
   rctx.restore();
   rctx.globalCompositeOperation = 'source-over';
 
-  /* ARAÇ KONUM HALESİ & OKU */
+  /* ARAÇ KONUM HALESİ & OKU (HER ZAMAN SÜRÜŞ YÖNÜNDE YUKARI) */
   const glow = rctx.createRadialGradient(tx, ty, 0, tx, ty, 76 * dp);
   glow.addColorStop(0, `rgba(56, 189, 248, ${(0.28 * br).toFixed(3)})`);
   glow.addColorStop(1, 'rgba(56, 189, 248, 0)');
@@ -1348,7 +1349,6 @@ function drawRoadMap(){
 
   rctx.save();
   rctx.translate(tx, ty);
-  if (northUp) rctx.rotate(targetHeading * Math.PI / 180);
   rctx.fillStyle = '#07111e';
   rctx.strokeStyle = '#f59e0b';
   rctx.lineWidth = 2.2 * dp;
